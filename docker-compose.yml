@@ -1,0 +1,104 @@
+services:
+  # 1. Baza de date Relațională (Metadate și ChirpStack)
+  postgres:
+    image: postgres:14-alpine
+    container_name: lorawan_postgres
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=secretpassword
+      # Baza de date principală pentru aplicația noastră (Next.js/Prisma)
+      - POSTGRES_DB=lorawan_app_db 
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Script de inițializare pentru a crea baza de date separată pentru ChirpStack
+      - ./config/postgres/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+    restart: unless-stopped
+
+  # 2. Baza de date Time-Series (Citirile senzorilor)
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: lorawan_influxdb
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=secretpassword
+      - DOCKER_INFLUXDB_INIT_ORG=lorawan_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensor_data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=super-secret-auth-token
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    restart: unless-stopped
+
+  # 3. Redis (Necesar pentru ChirpStack - caching și pub/sub)
+  redis:
+    image: redis:7-alpine
+    container_name: lorawan_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # 4. Broker MQTT (Mosquitto - Ingestia datelor)
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: lorawan_mqtt
+    ports:
+      - "1883:1883" # Portul standard MQTT lipsit de criptare (pentru mediu local)
+      - "9001:9001" # WebSockets
+    volumes:
+      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    restart: unless-stopped
+
+  # 5. ChirpStack Network Server
+  chirpstack:
+    image: chirpstack/chirpstack:4
+    container_name: lorawan_chirpstack
+    command: -c /etc/chirpstack
+    depends_on:
+      - postgres
+      - mosquitto
+      - redis
+    environment:
+      - POSTGRES_DSN=postgres://admin:secretpassword@postgres/chirpstack?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "8080:8080" # Interfața Web ChirpStack
+    volumes:
+      - ./config/chirpstack:/etc/chirpstack
+    restart: unless-stopped
+
+  # 6. ChirpStack Gateway Bridge (Traduce traficul UDP de la Gateway în pachete MQTT)
+  chirpstack-gateway-bridge:
+    image: chirpstack/chirpstack-gateway-bridge:4
+    container_name: lorawan_gateway_bridge
+    ports:
+      - "1700:1700/udp" # Portul standard pentru pachetele radio simulate
+    depends_on:
+      - mosquitto
+    volumes:
+      - ./config/chirpstack-gateway-bridge:/etc/chirpstack-gateway-bridge
+    restart: unless-stopped
+
+  # 7. Simulator LoRaWAN (LWN-Simulator)
+  lwn-simulator:
+    build: 
+      context: ./LWN-Simulator
+      dockerfile: Dockerfile
+    container_name: lorawan_simulator
+    depends_on:
+      - chirpstack-gateway-bridge
+    ports:
+      - "8000:8000"
+    environment:
+      - GATEWAY_ROUTER=chirpstack-gateway-bridge:1700
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  influxdb_data:
+  redis_data:
