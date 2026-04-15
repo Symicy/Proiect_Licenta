@@ -1,0 +1,19 @@
+[[regions]]
+id="eu868"
+description="EU868 Region"
+common_name="EU868"
+
+[regions.gateway.backend.mqtt]
+server="tcp://mosquitto:1883"
+marshaler="protobuf"
+event_topic="gateway/+/event/+"
+command_topic_template="gateway/{{ .GatewayID }}/command/{{ .CommandType }}"
+
+[regions.network]
+installation_margin=10
+rx_window=0
+rx1_delay=5
+rx1_dr_offset=0
+rx2_dr=0
+rx2_frequency=869525000
+downlink_tx_power=-1

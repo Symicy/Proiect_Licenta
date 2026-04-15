@@ -1,21 +1,20 @@
-# Configurarea regiunii LoRaWAN (Standardul pentru Europa)
 [network]
 net_id="000000"
-enabled_regions=[
-  "EU868",
-]
+enabled_regions=["eu868"]
 
-# Configurarea API-ului și a interfeței Web
 [api]
 bind="0.0.0.0:8080"
-# Un secret (JWT secret) obligatoriu pentru generarea token-urilor de autentificare în interfață
 secret="un-secret-foarte-sigur-pentru-licenta-ta-2025"
 
-# (Opțional) Supra-scriem setările din docker-compose pentru siguranță
 [postgresql]
 dsn="postgres://admin:secretpassword@postgres/chirpstack?sslmode=disable"
 
 [redis]
-servers=[
-  "redis://redis:6379",
-]
+servers=["redis://redis:6379"]
+
+[integration]
+enabled=["mqtt"]
+
+[integration.mqtt]
+server="tcp://mosquitto:1883"
+json=true

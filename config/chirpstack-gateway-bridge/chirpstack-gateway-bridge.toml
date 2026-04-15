@@ -1,0 +1,11 @@
+[backend.semtech_udp]
+udp_bind="0.0.0.0:1700"
+
+[integration.mqtt]
+marshaler="protobuf"
+event_topic_template="gateway/{{ .GatewayID }}/event/{{ .EventType }}"
+state_topic_template="gateway/{{ .GatewayID }}/state/{{ .StateType }}"
+command_topic_template="gateway/{{ .GatewayID }}/command/#"
+
+[integration.mqtt.auth.generic]
+server="tcp://mosquitto:1883"
