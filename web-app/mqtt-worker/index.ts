@@ -11,6 +11,38 @@ const INFLUX_ORG = process.env.INFLUX_ORG || '';
 const INFLUX_BUCKET = process.env.INFLUX_BUCKET || '';
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
 
+type DecodedUplinkObject = {
+    energy?: number;
+    voltage?: number;
+    current?: number;
+    consum_total_kWh?: number;
+    tensiune_V?: number;
+    curent_A?: number;
+    [key: string]: unknown;
+};
+
+type ChirpStackUplinkPayload = {
+    deviceInfo?: {
+        devEui?: string;
+    };
+    object?: DecodedUplinkObject;
+};
+
+function toFiniteNumber(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value === 'string') {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) {
+            return parsed;
+        }
+    }
+
+    return null;
+}
+
 // 1. Inițializăm clientul InfluxDB
 const influxDB = new InfluxDB({ url: INFLUX_URL, token: INFLUX_TOKEN });
 const writeApi = influxDB.getWriteApi(INFLUX_ORG, INFLUX_BUCKET, 'ns');
@@ -35,9 +67,9 @@ mqttClient.on('connect', () => {
 
 // 3. Procesăm mesajele primite
 // Am adăugat tipurile: topic este string, iar message este de tip Buffer
-mqttClient.on('message', (topic: string, message: Buffer) => {
+mqttClient.on('message', (_topic: string, message: Buffer) => {
     try {
-        const payload = JSON.parse(message.toString());
+        const payload = JSON.parse(message.toString()) as ChirpStackUplinkPayload;
         
         const devEui = payload.deviceInfo?.devEui;
         const decodedData = payload.object;
@@ -45,20 +77,30 @@ mqttClient.on('message', (topic: string, message: Buffer) => {
         if (devEui && decodedData) {
             console.log(`📥 Date primite de la ${devEui}:`, decodedData);
 
+            // Accept both generic keys and profile-specific Romanian keys from ChirpStack payload codec.
+            const energy = toFiniteNumber(decodedData.energy ?? decodedData.consum_total_kWh);
+            const voltage = toFiniteNumber(decodedData.voltage ?? decodedData.tensiune_V);
+            const current = toFiniteNumber(decodedData.current ?? decodedData.curent_A);
+
+            if (energy === null && voltage === null && current === null) {
+                console.warn(`⚠️ Niciun camp numeric mapat pentru ${devEui}. Payload ignorat.`);
+                return;
+            }
+
             const point = new Point('meter_reading')
                 .tag('devEui', devEui);
                 
-            if (decodedData.energy !== undefined) point.floatField('energy', decodedData.energy);
-            if (decodedData.voltage !== undefined) point.floatField('voltage', decodedData.voltage);
-            if (decodedData.current !== undefined) point.floatField('current', decodedData.current);
+            if (energy !== null) point.floatField('energy', energy);
+            if (voltage !== null) point.floatField('voltage', voltage);
+            if (current !== null) point.floatField('current', current);
 
             writeApi.writePoint(point);
             
             writeApi.flush()
                 .then(() => console.log(`💾 Salvat în InfluxDB pentru ${devEui}`))
-                .catch((err: any) => console.error('❌ Eroare la scriere InfluxDB:', err));
+                .catch((err: unknown) => console.error('❌ Eroare la scriere InfluxDB:', err));
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('❌ Eroare la procesarea pachetului MQTT:', error);
     }
 });

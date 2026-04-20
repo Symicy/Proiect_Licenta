@@ -1,42 +1,41 @@
 generator client {
   provider = "prisma-client-js"
+  engineType = "binary"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-// Modelul pentru conturile de utilizator
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  password  String   // Aici vom stoca hash-ul parolei (ex: bcrypt)
-  role      Role     @default(USER)
-  devices   Device[] // Relație One-to-Many cu contoarele
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role     @default(CUSTOMER)
+  devices      Device[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+model Device {
+  id           String  @id @default(uuid())
+  devEui       String  @unique
+  name         String
+  energyTariff Float
+  isActive     Boolean @default(true)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
 
-// Enum pentru roluri (RBAC - Role Based Access Control)
-enum Role {
-  USER
-  ADMIN
-}
-
-// Modelul pentru metadatele contoarelor (Smart Meters)
-model Device {
-  devEui      String   @id // Identificatorul unic hardware din rețeaua LoRaWAN (8 bytes hex)
-  name        String   // Un nume prietenos (ex: "Contor Etaj 1")
-  location    String?  // Adresa fizică sau descrierea locației
-  isActive    Boolean  @default(true)
-  
-  // Relația cu proprietarul (User)
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Notă: Datele efective (citirile, kWh) nu stau aici, ci în InfluxDB!
+  @@index([userId])
 }

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WattWise - Device Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#4ae176",
+                        "surface-container-lowest": "#060e20",
+                        "secondary-container": "#39485a",
+                        "on-surface-variant": "#c7c4d7",
+                        "inverse-primary": "#494bd6",
+                        "secondary-fixed": "#d4e4fa",
+                        "primary-fixed": "#e1e0ff",
+                        "surface-container-high": "#222a3d",
+                        "on-background": "#dae2fd",
+                        "on-tertiary": "#003915",
+                        "tertiary-container": "#00a74b",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "surface-variant": "#2d3449",
+                        "on-primary-container": "#0d0096",
+                        "on-tertiary-fixed": "#002109",
+                        "primary": "#c0c1ff",
+                        "surface": "#0b1326",
+                        "on-error": "#690005",
+                        "on-tertiary-container": "#003111",
+                        "primary-container": "#8083ff",
+                        "surface-tint": "#c0c1ff",
+                        "on-secondary-fixed": "#0d1c2d",
+                        "inverse-surface": "#dae2fd",
+                        "surface-container": "#171f33",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "tertiary-fixed": "#6bff8f",
+                        "on-primary": "#1000a9",
+                        "on-primary-fixed": "#07006c",
+                        "secondary-fixed-dim": "#b9c8de",
+                        "on-surface": "#dae2fd",
+                        "outline": "#908fa0",
+                        "on-secondary-container": "#a7b6cc",
+                        "on-secondary": "#233143",
+                        "surface-dim": "#0b1326",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "inverse-on-surface": "#283044",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "background": "#0b1326",
+                        "surface-container-highest": "#2d3449",
+                        "on-secondary-fixed-variant": "#39485a",
+                        "secondary": "#b9c8de",
+                        "error": "#ffb4ab",
+                        "on-error-container": "#ffdad6",
+                        "surface-bright": "#31394d",
+                        "error-container": "#93000a",
+                        "outline-variant": "#464554",
+                        "surface-container-low": "#131b2e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Public Sans"],
+                        "body": ["Public Sans"],
+                        "label": ["Public Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer utilities {
+            .glass-panel {
+                @apply bg-surface-bright/60 backdrop-blur-[24px];
+            }
+            .text-glow {
+                text-shadow: 0 0 12px rgba(192, 193, 255, 0.4);
+            }
+            .status-glow-success {
+                box-shadow: 0 0 8px rgba(74, 225, 118, 0.3);
+            }
+            .status-glow-error {
+                box-shadow: 0 0 8px rgba(255, 180, 171, 0.3);
+            }
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body min-h-screen flex flex-col md:flex-row antialiased selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden">
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex flex-col h-screen w-64 bg-[#0b1326] py-8 px-4 gap-8 shrink-0 border-r border-surface-container-low/30 sticky top-0">
+<div class="px-4">
+<h1 class="text-2xl font-black tracking-tighter bg-gradient-to-br from-[#c0c1ff] to-[#8083ff] bg-clip-text text-transparent">WattWise</h1>
+<p class="text-xs text-on-surface-variant uppercase tracking-wider mt-1 font-semibold">Premium Tier</p>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 text-slate-500 px-4 py-3 font-public-sans text-sm tracking-wide uppercase font-bold hover:bg-[#131b2e] hover:text-[#c0c1ff] transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+                Overview
+            </a>
+<a class="flex items-center gap-3 text-slate-500 px-4 py-3 font-public-sans text-sm tracking-wide uppercase font-bold hover:bg-[#131b2e] hover:text-[#c0c1ff] transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="insights">insights</span>
+                Analytics
+            </a>
+<a class="flex items-center gap-3 bg-[#222a3d] text-[#c0c1ff] rounded-lg px-4 py-3 border-r-4 border-[#c0c1ff] font-public-sans text-sm tracking-wide uppercase font-bold shadow-[0_8px_16px_rgba(0,0,0,0.2)]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="bolt">bolt</span>
+                Devices
+            </a>
+<a class="flex items-center gap-3 text-slate-500 px-4 py-3 font-public-sans text-sm tracking-wide uppercase font-bold hover:bg-[#131b2e] hover:text-[#c0c1ff] transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="payments">payments</span>
+                Billing
+            </a>
+<a class="flex items-center gap-3 text-slate-500 px-4 py-3 font-public-sans text-sm tracking-wide uppercase font-bold hover:bg-[#131b2e] hover:text-[#c0c1ff] transition-all rounded-lg mt-auto" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings_suggest">settings_suggest</span>
+                Settings
+            </a>
+</div>
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-on-primary py-3 rounded-full font-bold text-sm tracking-wide hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(128,131,255,0.25)]">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            Add Device
+        </button>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col min-h-screen relative w-full overflow-hidden">
+<!-- TopAppBar (Mobile & Web Contextual) -->
+<header class="flex justify-between items-center px-6 py-4 w-full bg-[#0b1326]/80 backdrop-blur-xl md:bg-transparent md:backdrop-blur-none sticky top-0 z-40 border-b border-surface-container-low/50 md:border-none">
+<div class="md:hidden flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-2xl">bolt</span>
+<h2 class="text-xl font-bold tracking-tighter text-[#c0c1ff]">WattWise</h2>
+</div>
+<div class="hidden md:flex flex-col">
+<h2 class="text-[2.75rem] font-bold leading-none tracking-[-0.02em] text-on-surface">Device Management</h2>
+<p class="text-on-surface-variant text-sm mt-2">Monitor and configure your active IoT fleet.</p>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary status-glow-success"></span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-low border-2 border-surface-container overflow-hidden shrink-0">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhlN1w-aPJEGvy7O_e_OdjrLGthF-EnVdel-Itzp5SERQRU_6Ros8lcM20sT8sEvoR572DSsyRaaMrqfR_RlJ1avXd48IZelG-N8scSEOKmPOvxfTaam4siD_Km-mKTV3tYmTX6FVgG2A49pa9CyOXRAmdElFLF8KbjYSfUOqh0vBLNIVtdOrJTa_UHakSh9ntCh_1ZkE6biCuUNbxB_gSCXIbhLGK26KTGLXviagEgUX61HTceTu6Dcj5MsDvwUylZFhj53Nii1on"/>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="flex-1 p-4 md:p-8 flex flex-col gap-8 max-w-[1600px] w-full mx-auto">
+<div class="md:hidden mb-2">
+<h2 class="text-[2rem] font-bold leading-tight tracking-tight text-on-surface">Device Management</h2>
+</div>
+<!-- Analytics / Summary Cards (Bento style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-surface-container-low rounded-xl p-6 relative overflow-hidden group">
+<div class="absolute -right-6 -top-6 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors duration-500"></div>
+<div class="flex justify-between items-start mb-4">
+<span class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Total Fleet</span>
+<span class="material-symbols-outlined text-primary">dns</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-[2.75rem] font-black tracking-tighter text-on-surface leading-none">1,248</span>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-xl p-6 relative overflow-hidden group">
+<div class="absolute -right-6 -top-6 w-32 h-32 bg-tertiary/5 rounded-full blur-2xl group-hover:bg-tertiary/10 transition-colors duration-500"></div>
+<div class="flex justify-between items-start mb-4">
+<span class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Connected</span>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary/10 border border-tertiary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary status-glow-success"></span>
+<span class="text-[0.6875rem] font-bold text-tertiary uppercase">98.2%</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-[2.75rem] font-black tracking-tighter text-on-surface leading-none">1,225</span>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-xl p-6 relative overflow-hidden group">
+<div class="absolute -right-6 -top-6 w-32 h-32 bg-error/5 rounded-full blur-2xl group-hover:bg-error/10 transition-colors duration-500"></div>
+<div class="flex justify-between items-start mb-4">
+<span class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Critical Errors</span>
+<span class="material-symbols-outlined text-error">warning</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-[2.75rem] font-black tracking-tighter text-error leading-none">3</span>
+<span class="text-sm text-on-surface-variant font-medium">Requires attention</span>
+</div>
+</div>
+</div>
+<!-- Main Data Section -->
+<div class="flex-1 flex flex-col bg-surface-container-low rounded-xl overflow-hidden shadow-[0_24px_48px_rgba(6,14,32,0.4)]">
+<!-- Filter Bar -->
+<div class="p-4 md:p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-surface-container-low z-10 relative">
+<!-- Search Input -->
+<div class="w-full lg:w-96 relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-surface-container-lowest text-on-surface border-none rounded-lg pl-12 pr-4 py-3 text-sm focus:ring-0 focus:outline-none transition-all placeholder:text-on-surface-variant/50" placeholder="Search devEui or Name..." type="text"/>
+<div class="absolute bottom-0 left-0 w-full h-[2px] bg-outline-variant/30 rounded-b-lg"></div>
+<div class="absolute bottom-0 left-0 w-0 h-[2px] bg-primary rounded-b-lg transition-all duration-300 group-focus-within:w-full"></div>
+</div>
+<!-- Status Chips -->
+<div class="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 scrollbar-hide">
+<button class="px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-bold uppercase tracking-wider whitespace-nowrap shadow-[0_2px_8px_rgba(192,193,255,0.25)]">All</button>
+<button class="px-4 py-2 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors text-xs font-bold uppercase tracking-wider whitespace-nowrap border border-outline-variant/20">Connected</button>
+<button class="px-4 py-2 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors text-xs font-bold uppercase tracking-wider whitespace-nowrap border border-outline-variant/20">Heartbeat</button>
+<button class="px-4 py-2 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest hover:text-error transition-colors text-xs font-bold uppercase tracking-wider whitespace-nowrap border border-outline-variant/20">Error</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto w-full flex-1">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container border-b border-surface/50">
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant whitespace-nowrap">Device Name</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant whitespace-nowrap hidden sm:table-cell">devEui</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant whitespace-nowrap">Status</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant whitespace-nowrap hidden lg:table-cell">Last Seen</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant whitespace-nowrap text-right">Load (W)</th>
+<th class="py-4 px-6 text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant whitespace-nowrap text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface/30">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-highest/50 transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary group-hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[18px]">aod</span>
+</div>
+<span class="font-semibold text-on-surface text-sm">HVAC Sub-panel A</span>
+</div>
+</td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="font-mono text-xs text-on-surface-variant bg-surface px-2 py-1 rounded">A8:40:41:00:01:8C</span>
+</td>
+<td class="py-4 px-6">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-tertiary/10 border border-tertiary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary status-glow-success"></span>
+<span class="text-[0.6875rem] font-bold text-tertiary uppercase tracking-wider">Connected</span>
+</div>
+</td>
+<td class="py-4 px-6 hidden lg:table-cell text-sm text-on-surface-variant">2 mins ago</td>
+<td class="py-4 px-6 text-right">
+<span class="font-mono text-sm font-semibold text-on-surface">4,250</span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="View Details">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors" title="Reboot">
+<span class="material-symbols-outlined text-[20px]">restart_alt</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-highest/50 transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary group-hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[18px]">conveyor_belt</span>
+</div>
+<span class="font-semibold text-on-surface text-sm">Line 1 Conveyor</span>
+</div>
+</td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="font-mono text-xs text-on-surface-variant bg-surface px-2 py-1 rounded">A8:40:41:00:02:1F</span>
+</td>
+<td class="py-4 px-6">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-error/10 border border-error/20">
+<span class="w-1.5 h-1.5 rounded-full bg-error status-glow-error animate-pulse"></span>
+<span class="text-[0.6875rem] font-bold text-error uppercase tracking-wider">Error</span>
+</div>
+</td>
+<td class="py-4 px-6 hidden lg:table-cell text-sm text-error font-medium">Offline (2h)</td>
+<td class="py-4 px-6 text-right">
+<span class="font-mono text-sm font-semibold text-on-surface-variant">--</span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="View Details">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors" title="Reboot">
+<span class="material-symbols-outlined text-[20px]">restart_alt</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-highest/50 transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary group-hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[18px]">lightbulb</span>
+</div>
+<span class="font-semibold text-on-surface text-sm">Warehouse Lighting Zone B</span>
+</div>
+</td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="font-mono text-xs text-on-surface-variant bg-surface px-2 py-1 rounded">A8:40:41:00:03:4D</span>
+</td>
+<td class="py-4 px-6">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-container/30 border border-secondary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-[0.6875rem] font-bold text-secondary uppercase tracking-wider">Heartbeat</span>
+</div>
+</td>
+<td class="py-4 px-6 hidden lg:table-cell text-sm text-on-surface-variant">15 mins ago</td>
+<td class="py-4 px-6 text-right">
+<span class="font-mono text-sm font-semibold text-on-surface">850</span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="View Details">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors" title="Reboot">
+<span class="material-symbols-outlined text-[20px]">restart_alt</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-highest/50 transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary group-hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[18px]">aod</span>
+</div>
+<span class="font-semibold text-on-surface text-sm">HVAC Sub-panel B</span>
+</div>
+</td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="font-mono text-xs text-on-surface-variant bg-surface px-2 py-1 rounded">A8:40:41:00:01:8D</span>
+</td>
+<td class="py-4 px-6">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-tertiary/10 border border-tertiary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary status-glow-success"></span>
+<span class="text-[0.6875rem] font-bold text-tertiary uppercase tracking-wider">Connected</span>
+</div>
+</td>
+<td class="py-4 px-6 hidden lg:table-cell text-sm text-on-surface-variant">Just now</td>
+<td class="py-4 px-6 text-right">
+<span class="font-mono text-sm font-semibold text-on-surface">3,920</span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="View Details">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors" title="Reboot">
+<span class="material-symbols-outlined text-[20px]">restart_alt</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="p-4 border-t border-surface/50 bg-surface-container-low flex items-center justify-between mt-auto">
+<span class="text-xs text-on-surface-variant font-medium">Showing 1-4 of 1,248</span>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center bg-primary text-on-primary text-sm font-bold">1</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors text-sm font-medium">2</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors text-sm font-medium">3</button>
+<span class="text-on-surface-variant px-1">...</span>
+<button class="w-8 h-8 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

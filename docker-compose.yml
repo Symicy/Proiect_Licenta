@@ -96,6 +96,8 @@ services:
       - "8000:8000"
     environment:
       - GATEWAY_ROUTER=chirpstack-gateway-bridge:1700
+    volumes:
+      - ./simulator_data:/usr/src/app/db
     restart: unless-stopped
 
 volumes:

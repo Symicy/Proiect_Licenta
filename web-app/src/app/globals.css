@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --font-sans: var(--font-public-sans), "Public Sans", "Segoe UI", sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-primary: #c0c1ff;
+  --color-primary-container: #8083ff;
+  --color-tertiary: #4ae176;
+  --color-surface: #0b1326;
+  --color-surface-container-lowest: #060e20;
+  --color-surface-container-low: #131b2e;
+  --color-surface-container: #171f33;
+  --color-surface-container-high: #222a3d;
+  --color-surface-container-highest: #2d3449;
+  --color-surface-bright: #31394d;
+  --color-on-surface: #dae2fd;
+  --color-on-surface-variant: #c7c4d7;
+  --color-outline-variant: #464554;
+  --color-error: #ffb4ab;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% -8%, rgba(128, 131, 255, 0.24), transparent 40%),
+    radial-gradient(circle at 90% 120%, rgba(192, 193, 255, 0.18), transparent 44%),
+    var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(192, 193, 255, 0.45) rgba(19, 27, 46, 0.7);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(19, 27, 46, 0.7);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(192, 193, 255, 0.45);
+  border-radius: 9999px;
+}
+
+.primary-gradient-bg {
+  background-image: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+}
+
+.brand-gradient-text {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ambient-panel-shadow {
+  box-shadow: 0 48px 48px rgba(6, 14, 32, 0.2);
+}
+
+.status-glow {
+  box-shadow: 0 0 8px rgba(74, 225, 118, 0.35);
 }
