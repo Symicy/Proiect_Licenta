@@ -61,7 +61,7 @@ export function formatCurrency(value: number | null | undefined) {
   }).format(value);
 }
 
-export function formatKwh(value: number | null | undefined) {
+export function formatQuantity(value: number | null | undefined) {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "--";
   }
@@ -72,6 +72,8 @@ export function formatKwh(value: number | null | undefined) {
 
   return value.toFixed(2);
 }
+
+export const formatKwh = formatQuantity;
 
 export function formatLoadWatts(value: number | null | undefined) {
   if (value === null || value === undefined || Number.isNaN(value)) {

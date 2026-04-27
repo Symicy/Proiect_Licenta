@@ -3,6 +3,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { useDeviceSse } from "@/lib/hooks/useDeviceSse";
 import type { MeterReading } from "@/lib/services/influx.service";
+import { defaultUnitLabelForUtilityType, type UtilityType } from "@/lib/utility";
 
 import { NAV_ITEMS, VIEW_PATHS } from "../constants";
 import type {
@@ -15,12 +16,15 @@ import type {
   DeviceCostResult,
   DeviceRow,
   DevicesResponse,
+  FleetSummary,
+  FleetSummaryResponse,
   LatestReadingResponse,
   MeResponse,
   PublicDevice,
   PublicUser,
   RangeReadingsResponse,
   StatusFilter,
+  UpdateDeviceFormState,
   ViewKey,
 } from "../types";
 import {
@@ -70,6 +74,33 @@ function resolveViewFromPath(pathname: string | null): ViewKey | null {
   return matchedEntry?.[0] ?? null;
 }
 
+function hasValidCoordinates(device: PublicDevice): device is PublicDevice & { latitude: number; longitude: number } {
+  return (
+    typeof device.latitude === "number" &&
+    Number.isFinite(device.latitude) &&
+    device.latitude >= -90 &&
+    device.latitude <= 90 &&
+    typeof device.longitude === "number" &&
+    Number.isFinite(device.longitude) &&
+    device.longitude >= -180 &&
+    device.longitude <= 180
+  );
+}
+
+function toCoordinateFormValue(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? String(value) : "";
+}
+
+function parseCoordinateInput(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? null : Number(trimmed);
+}
+
+function parseUnitLabelInput(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
+}
+
 export function useDashboardController(initialView: ViewKey = "overview") {
   const router = useRouter();
   const pathname = usePathname();
@@ -104,8 +135,24 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   const [createForm, setCreateForm] = useState<CreateDeviceFormState>({
     devEui: "",
     name: "",
-    energyTariff: "0.25",
+    utilityType: "ELECTRICITY",
+    tariffPerUnit: "0.25",
+    unitLabel: defaultUnitLabelForUtilityType("ELECTRICITY"),
     isActive: true,
+    latitude: "",
+    longitude: "",
+  });
+  const [editingDevEui, setEditingDevEui] = useState<string | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<UpdateDeviceFormState>({
+    name: "",
+    utilityType: "ELECTRICITY",
+    tariffPerUnit: "0.25",
+    unitLabel: defaultUnitLabelForUtilityType("ELECTRICITY"),
+    isActive: true,
+    latitude: "",
+    longitude: "",
   });
 
   const [selectedReadings, setSelectedReadings] = useState<MeterReading[]>([]);
@@ -121,6 +168,9 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   });
   const [selectedDataLoading, setSelectedDataLoading] = useState(false);
   const [selectedDataError, setSelectedDataError] = useState<string | null>(null);
+  const [fleetSummary, setFleetSummary] = useState<FleetSummary | null>(null);
+  const [fleetSummaryLoading, setFleetSummaryLoading] = useState(false);
+  const [fleetSummaryError, setFleetSummaryError] = useState<string | null>(null);
 
   const {
     status: streamStatus,
@@ -157,6 +207,21 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     () => devices.find((device) => device.devEui === selectedDevEui) ?? null,
     [devices, selectedDevEui],
   );
+  const devicesWithCoordinates = useMemo(
+    () => devices.filter(hasValidCoordinates),
+    [devices],
+  );
+
+  useEffect(() => {
+    if (!editingDevEui) {
+      return;
+    }
+
+    if (!devices.some((device) => device.devEui === editingDevEui)) {
+      setEditingDevEui(null);
+      setEditError(null);
+    }
+  }, [devices, editingDevEui]);
 
   const loadDevices = useCallback(async () => {
     setDevicesLoading(true);
@@ -188,6 +253,21 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       dashboardSessionCache.selectedDevEui = null;
     } finally {
       setDevicesLoading(false);
+    }
+  }, []);
+
+  const loadFleetSummary = useCallback(async () => {
+    setFleetSummaryLoading(true);
+    setFleetSummaryError(null);
+
+    try {
+      const payload = await apiRequest<FleetSummaryResponse>("/api/devices/summary");
+      setFleetSummary(payload.summary);
+    } catch (error) {
+      setFleetSummary(null);
+      setFleetSummaryError(extractErrorMessage(error));
+    } finally {
+      setFleetSummaryLoading(false);
     }
   }, []);
 
@@ -311,6 +391,10 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     if (!user) {
       setDevices([]);
       setSelectedDevEui(null);
+      setEditingDevEui(null);
+      setEditError(null);
+      setFleetSummary(null);
+      setFleetSummaryError(null);
 
       dashboardSessionCache.devicesResolved = false;
       dashboardSessionCache.devices = [];
@@ -321,11 +405,13 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     if (dashboardSessionCache.devicesResolved) {
       setDevices(dashboardSessionCache.devices);
       setSelectedDevEui((current) => current ?? dashboardSessionCache.selectedDevEui ?? dashboardSessionCache.devices[0]?.devEui ?? null);
+      void loadFleetSummary();
       return;
     }
 
     void loadDevices();
-  }, [user, loadDevices]);
+    void loadFleetSummary();
+  }, [user, loadDevices, loadFleetSummary]);
 
   useEffect(() => {
     if (!user || !selectedDevEui) {
@@ -362,12 +448,14 @@ export function useDashboardController(initialView: ViewKey = "overview") {
         reading && reading.voltage !== null && reading.current !== null
           ? reading.voltage * reading.current
           : null;
+      const latestConsumption = reading?.consumption ?? null;
 
       const status = resolveDeviceStatus(device, reading, streamStatus);
 
       return {
         device,
         reading,
+        latestConsumption,
         loadWatts,
         status,
         lastSeen: formatRelativeTime(reading?.timestamp),
@@ -417,17 +505,51 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   const topConsumers = useMemo(
     () =>
       [...deviceRows]
-        .filter((row) => row.loadWatts !== null)
-        .sort((first, second) => (second.loadWatts ?? 0) - (first.loadWatts ?? 0))
+        .filter((row) => row.latestConsumption !== null)
+        .sort((first, second) => (second.latestConsumption ?? 0) - (first.latestConsumption ?? 0))
         .slice(0, 4),
     [deviceRows],
   );
 
+  const liveByCategory = useMemo(() => {
+    const categories = new Map<
+      string,
+      {
+        utilityType: PublicDevice["utilityType"];
+        unitLabel: string;
+        deviceCount: number;
+        latestConsumption: number;
+        liveEstimatedCost: number;
+      }
+    >();
+
+    for (const row of deviceRows) {
+      const key = `${row.device.utilityType}::${row.device.unitLabel}`;
+      const existing = categories.get(key);
+
+      if (!existing) {
+        categories.set(key, {
+          utilityType: row.device.utilityType,
+          unitLabel: row.device.unitLabel,
+          deviceCount: 1,
+          latestConsumption: row.latestConsumption ?? 0,
+          liveEstimatedCost: row.liveCost ?? 0,
+        });
+        continue;
+      }
+
+      existing.deviceCount += 1;
+      existing.latestConsumption += row.latestConsumption ?? 0;
+      existing.liveEstimatedCost += row.liveCost ?? 0;
+    }
+
+    return [...categories.values()].sort(
+      (first, second) => second.liveEstimatedCost - first.liveEstimatedCost,
+    );
+  }, [deviceRows]);
+
   const chartSeries = useMemo(
-    () =>
-      selectedReadings.map((reading) =>
-        reading.voltage !== null && reading.current !== null ? reading.voltage * reading.current : null,
-      ),
+    () => selectedReadings.map((reading) => reading.consumption),
     [selectedReadings],
   );
   const chartPaths = useMemo(() => buildChartPaths(chartSeries), [chartSeries]);
@@ -438,6 +560,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       ? selectedLatest.voltage * selectedLatest.current
       : null;
   const currentLoadKw = currentLoadWatts !== null ? currentLoadWatts / 1000 : null;
+  const currentConsumption = selectedLatest?.consumption ?? null;
 
   const recentAlerts = useMemo<AlertItem[]>(() => {
     const alerts: AlertItem[] = [];
@@ -531,6 +654,8 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       });
 
       setUser(null);
+      setEditingDevEui(null);
+      setEditError(null);
 
       dashboardSessionCache.user = null;
       dashboardSessionCache.devicesResolved = false;
@@ -557,14 +682,41 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     setCreateError(null);
 
     try {
+      const latitude = parseCoordinateInput(createForm.latitude);
+      const longitude = parseCoordinateInput(createForm.longitude);
+      const unitLabel = parseUnitLabelInput(createForm.unitLabel);
+      const createPayload: {
+        devEui: string;
+        name: string;
+        utilityType: UtilityType;
+        tariffPerUnit: number;
+        unitLabel?: string;
+        isActive: boolean;
+        latitude?: number;
+        longitude?: number;
+      } = {
+        devEui: createForm.devEui,
+        name: createForm.name,
+        utilityType: createForm.utilityType,
+        tariffPerUnit: Number(createForm.tariffPerUnit),
+        isActive: createForm.isActive,
+      };
+
+      if (unitLabel) {
+        createPayload.unitLabel = unitLabel;
+      }
+
+      if (latitude !== null) {
+        createPayload.latitude = latitude;
+      }
+
+      if (longitude !== null) {
+        createPayload.longitude = longitude;
+      }
+
       const payload = await apiRequest<{ device: PublicDevice }>("/api/devices", {
         method: "POST",
-        body: JSON.stringify({
-          devEui: createForm.devEui,
-          name: createForm.name,
-          energyTariff: Number(createForm.energyTariff),
-          isActive: createForm.isActive,
-        }),
+        body: JSON.stringify(createPayload),
       });
 
       setDevices((previous) => {
@@ -579,15 +731,104 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       setCreateForm({
         devEui: "",
         name: "",
-        energyTariff: createForm.energyTariff,
+        utilityType: createForm.utilityType,
+        tariffPerUnit: createForm.tariffPerUnit,
+        unitLabel: createForm.unitLabel,
         isActive: true,
+        latitude: "",
+        longitude: "",
       });
       setShowCreateDevice(false);
       setActiveViewWithRoute("devices");
+      void loadFleetSummary();
     } catch (error) {
       setCreateError(extractErrorMessage(error));
     } finally {
       setCreateSubmitting(false);
+    }
+  };
+
+  const handleStartEditDevice = (device: PublicDevice) => {
+    setEditingDevEui(device.devEui);
+    setEditError(null);
+    setEditForm({
+      name: device.name,
+      utilityType: device.utilityType,
+      tariffPerUnit: String(device.tariffPerUnit),
+      unitLabel: device.unitLabel,
+      isActive: device.isActive,
+      latitude: toCoordinateFormValue(device.latitude),
+      longitude: toCoordinateFormValue(device.longitude),
+    });
+  };
+
+  const handleCancelEditDevice = () => {
+    setEditingDevEui(null);
+    setEditError(null);
+  };
+
+  const handleEditDevice = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!editingDevEui) {
+      setEditError("No device selected for update.");
+      return;
+    }
+
+    setEditSubmitting(true);
+    setEditError(null);
+
+    try {
+      const latitude = parseCoordinateInput(editForm.latitude);
+      const longitude = parseCoordinateInput(editForm.longitude);
+      const unitLabel = parseUnitLabelInput(editForm.unitLabel);
+      const updatePayload: {
+        name: string;
+        utilityType: UtilityType;
+        tariffPerUnit: number;
+        unitLabel?: string;
+        isActive: boolean;
+        latitude?: number;
+        longitude?: number;
+      } = {
+        name: editForm.name,
+        utilityType: editForm.utilityType,
+        tariffPerUnit: Number(editForm.tariffPerUnit),
+        isActive: editForm.isActive,
+      };
+
+      if (unitLabel) {
+        updatePayload.unitLabel = unitLabel;
+      }
+
+      if (latitude !== null) {
+        updatePayload.latitude = latitude;
+      }
+
+      if (longitude !== null) {
+        updatePayload.longitude = longitude;
+      }
+
+      const payload = await apiRequest<{ device: PublicDevice }>(`/api/devices/${editingDevEui}`, {
+        method: "PATCH",
+        body: JSON.stringify(updatePayload),
+      });
+
+      setDevices((previous) => {
+        const nextDevices = previous.map((device) =>
+          device.devEui === payload.device.devEui ? payload.device : device,
+        );
+        dashboardSessionCache.devices = nextDevices;
+        dashboardSessionCache.devicesResolved = true;
+        return nextDevices;
+      });
+
+      setEditingDevEui(null);
+      void loadFleetSummary();
+    } catch (error) {
+      setEditError(extractErrorMessage(error));
+    } finally {
+      setEditSubmitting(false);
     }
   };
 
@@ -612,6 +853,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     authForm,
     activeView,
     devices,
+    devicesWithCoordinates,
     devicesLoading,
     devicesError,
     selectedDevEui,
@@ -621,11 +863,18 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     createSubmitting,
     createError,
     createForm,
+    editingDevEui,
+    editSubmitting,
+    editError,
+    editForm,
     selectedReadings,
     selectedLatest,
     selectedCosts,
     selectedDataLoading,
     selectedDataError,
+    fleetSummary,
+    fleetSummaryLoading,
+    fleetSummaryError,
     streamStatus,
     streamError,
     lastHeartbeatAt,
@@ -641,10 +890,12 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     errorCount,
     fleetHealthPercent,
     topConsumers,
+    liveByCategory,
     chartPaths,
     chartLabels,
     currentLoadWatts,
     currentLoadKw,
+    currentConsumption,
     recentAlerts,
     activeNavItem,
     setAuthMode,
@@ -654,12 +905,17 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     setStatusFilter,
     setShowCreateDevice,
     setCreateForm,
+    setEditForm,
     setActiveViewWithRoute,
     loadDevices,
+    loadFleetSummary,
     loadSelectedDeviceData,
     handleAuthSubmit,
     handleLogout,
     handleCreateDevice,
+    handleStartEditDevice,
+    handleCancelEditDevice,
+    handleEditDevice,
     handleSelectDevice,
   };
 }

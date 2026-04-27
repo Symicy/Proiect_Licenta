@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { MeterReading } from "@/lib/services/influx.service";
+import type { UtilityType } from "@/lib/utility";
 
 type StreamConnectionStatus = "idle" | "connecting" | "open" | "error" | "closed";
 
 type MeterReadingEvent = {
   devEui: string;
   deviceName: string;
-  energyTariff: number;
+  utilityType: UtilityType;
+  tariffPerUnit: number;
+  unitLabel: string;
   estimatedCostAtReading: number | null;
   reading: MeterReading;
 };

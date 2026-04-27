@@ -1,14 +1,22 @@
-import type { Device } from "@prisma/client";
+import type { Device, UtilityType } from "@prisma/client";
 
 import prisma from "@/lib/prisma";
 import { normalizeDevEui } from "@/lib/validation/device";
+import { listSimulatorDevices, type SimulatorDiscoveredDevice } from "@/lib/services/simulator.service";
+import { defaultUnitLabelForUtilityType } from "@/lib/utility";
+
+const simulatorSyncCache = new Map<string, number>();
 
 export type PublicDevice = {
   id: string;
   devEui: string;
   name: string;
-  energyTariff: number;
+  utilityType: UtilityType;
+  tariffPerUnit: number;
+  unitLabel: string;
   isActive: boolean;
+  latitude: number | null;
+  longitude: number | null;
   userId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -17,14 +25,22 @@ export type PublicDevice = {
 export type CreateDeviceForUserInput = {
   devEui: string;
   name: string;
-  energyTariff: number;
+  utilityType: UtilityType;
+  tariffPerUnit: number;
+  unitLabel?: string;
   isActive: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type UpdateDeviceForUserInput = {
   name?: string;
-  energyTariff?: number;
+  utilityType?: UtilityType;
+  tariffPerUnit?: number;
+  unitLabel?: string;
   isActive?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 type DeviceOwnerResolution =
@@ -57,12 +73,133 @@ function toPublicDevice(device: Device): PublicDevice {
     id: device.id,
     devEui: device.devEui,
     name: device.name,
-    energyTariff: device.energyTariff,
+    utilityType: device.utilityType,
+    tariffPerUnit: device.tariffPerUnit,
+    unitLabel: device.unitLabel,
     isActive: device.isActive,
+    latitude: device.latitude,
+    longitude: device.longitude,
     userId: device.userId,
     createdAt: device.createdAt,
     updatedAt: device.updatedAt,
   };
+}
+
+function resolveAutoProvisionTariffPerUnit() {
+  const configuredTariff = Number(
+    process.env.AUTO_DEVICE_TARIFF_PER_UNIT ?? process.env.AUTO_DEVICE_ENERGY_TARIFF ?? "0.25",
+  );
+  if (!Number.isFinite(configuredTariff) || configuredTariff < 0) {
+    return 0.25;
+  }
+
+  return configuredTariff;
+}
+
+function resolveSimulatorSyncMinIntervalMs() {
+  const configured = Number(process.env.SIMULATOR_SYNC_MIN_INTERVAL_MS ?? "15000");
+  if (!Number.isFinite(configured) || configured < 0) {
+    return 15000;
+  }
+
+  return configured;
+}
+
+function shouldSyncFromSimulator(userId: string) {
+  const intervalMs = resolveSimulatorSyncMinIntervalMs();
+  const now = Date.now();
+  const lastSyncAt = simulatorSyncCache.get(userId) ?? 0;
+
+  if (now - lastSyncAt < intervalMs) {
+    return false;
+  }
+
+  simulatorSyncCache.set(userId, now);
+  return true;
+}
+
+function hasCoordinateDifference(existing: Device, discovered: SimulatorDiscoveredDevice) {
+  return existing.latitude !== discovered.latitude || existing.longitude !== discovered.longitude;
+}
+
+function resolveUnitLabel(unitLabel: string | undefined, utilityType: UtilityType) {
+  const normalized = unitLabel?.trim();
+  if (normalized && normalized.length > 0) {
+    return normalized;
+  }
+
+  return defaultUnitLabelForUtilityType(utilityType);
+}
+
+async function syncDevicesFromSimulatorForUser(userId: string) {
+  if (!shouldSyncFromSimulator(userId)) {
+    return;
+  }
+
+  const discoveredDevices = await listSimulatorDevices();
+  if (discoveredDevices.length === 0) {
+    return;
+  }
+
+  const discoveredDevEuis = discoveredDevices.map((device) => device.devEui);
+  const existingDevices = await prisma.device.findMany({
+    where: {
+      devEui: {
+        in: discoveredDevEuis,
+      },
+    },
+  });
+
+  const existingByDevEui = new Map(existingDevices.map((device) => [device.devEui, device]));
+  const defaultTariff = resolveAutoProvisionTariffPerUnit();
+
+  for (const discoveredDevice of discoveredDevices) {
+    const existingDevice = existingByDevEui.get(discoveredDevice.devEui);
+
+    if (!existingDevice) {
+      try {
+        const created = await prisma.device.create({
+          data: {
+            devEui: discoveredDevice.devEui,
+            name: discoveredDevice.name,
+            utilityType: discoveredDevice.utilityType,
+            tariffPerUnit: defaultTariff,
+            unitLabel: discoveredDevice.unitLabel,
+            isActive: discoveredDevice.isActive,
+            latitude: discoveredDevice.latitude,
+            longitude: discoveredDevice.longitude,
+            userId,
+          },
+        });
+
+        existingByDevEui.set(discoveredDevice.devEui, created);
+      } catch {
+        // Another user might have claimed this devEui first.
+      }
+
+      continue;
+    }
+
+    if (existingDevice.userId !== userId) {
+      continue;
+    }
+
+    if (!hasCoordinateDifference(existingDevice, discoveredDevice)) {
+      continue;
+    }
+
+    const updated = await prisma.device.update({
+      where: {
+        devEui: discoveredDevice.devEui,
+      },
+      data: {
+        latitude: discoveredDevice.latitude,
+        longitude: discoveredDevice.longitude,
+      },
+    });
+
+    existingByDevEui.set(discoveredDevice.devEui, updated);
+  }
 }
 
 async function resolveDeviceOwnership(userId: string, rawDevEui: string): Promise<DeviceOwnerResolution> {
@@ -83,6 +220,8 @@ async function resolveDeviceOwnership(userId: string, rawDevEui: string): Promis
 }
 
 export async function listDevicesForUser(userId: string) {
+  await syncDevicesFromSimulatorForUser(userId);
+
   const devices = await prisma.device.findMany({
     where: { userId },
     orderBy: {
@@ -113,12 +252,19 @@ export async function createDeviceForUser(
     return { status: "owned-by-other-user" };
   }
 
+  const utilityType = input.utilityType;
+  const unitLabel = resolveUnitLabel(input.unitLabel, utilityType);
+
   const createdDevice = await prisma.device.create({
     data: {
       devEui,
       name: input.name.trim(),
-      energyTariff: input.energyTariff,
+      utilityType,
+      tariffPerUnit: input.tariffPerUnit,
+      unitLabel,
       isActive: input.isActive,
+      latitude: input.latitude,
+      longitude: input.longitude,
       userId,
     },
   });
@@ -164,12 +310,24 @@ export async function updateDeviceForUserByDevEui(
     return { status: "forbidden" };
   }
 
+  const nextUtilityType = input.utilityType ?? ownership.device.utilityType;
+  const nextUnitLabel =
+    input.unitLabel !== undefined
+      ? resolveUnitLabel(input.unitLabel, nextUtilityType)
+      : input.utilityType !== undefined
+        ? defaultUnitLabelForUtilityType(nextUtilityType)
+        : undefined;
+
   const updatedDevice = await prisma.device.update({
     where: { devEui: ownership.device.devEui },
     data: {
       name: input.name?.trim(),
-      energyTariff: input.energyTariff,
+      utilityType: input.utilityType,
+      tariffPerUnit: input.tariffPerUnit,
+      unitLabel: nextUnitLabel,
       isActive: input.isActive,
+      latitude: input.latitude,
+      longitude: input.longitude,
     },
   });
 

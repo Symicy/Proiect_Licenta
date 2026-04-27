@@ -1,4 +1,5 @@
 import type { MeterReading } from "@/lib/services/influx.service";
+import type { UtilityType } from "@/lib/utility";
 
 export type PublicUser = {
   id: string;
@@ -12,8 +13,12 @@ export type PublicDevice = {
   id: string;
   devEui: string;
   name: string;
-  energyTariff: number;
+  utilityType: UtilityType;
+  tariffPerUnit: number;
+  unitLabel: string;
   isActive: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
   userId: string;
   createdAt: string;
   updatedAt: string;
@@ -21,18 +26,19 @@ export type PublicDevice = {
 
 export type DeviceCostResult = {
   calculationMode: "delta" | "sum";
-  consumedKwh: number;
-  energyTariff: number;
+  consumedUnits: number;
+  tariffPerUnit: number;
+  unitLabel: string;
   estimatedCost: number;
   period: {
     start: string;
     stop: string;
   };
   details: {
-    sumKwh: number;
-    firstValueKwh: number;
-    lastValueKwh: number;
-    deltaKwh: number;
+    sumUnits: number;
+    firstValueUnits: number;
+    lastValueUnits: number;
+    deltaUnits: number;
   };
 };
 
@@ -64,7 +70,48 @@ export type CostResponse = {
   cost: DeviceCostResult;
 };
 
-export type ViewKey = "overview" | "devices" | "meter" | "billing";
+export type UtilityCategorySummary = {
+  utilityType: UtilityType;
+  unitLabel: string;
+  deviceCount: number;
+  activeDeviceCount: number;
+  today: {
+    consumedUnits: number;
+    estimatedCost: number;
+  };
+  week: {
+    consumedUnits: number;
+    estimatedCost: number;
+  };
+  month: {
+    consumedUnits: number;
+    estimatedCost: number;
+  };
+};
+
+export type FleetSummary = {
+  period: {
+    todayStart: string;
+    weekStart: string;
+    monthStart: string;
+    stop: string;
+  };
+  totals: {
+    deviceCount: number;
+    activeDeviceCount: number;
+    utilityCategoryCount: number;
+    todayEstimatedCost: number;
+    weekEstimatedCost: number;
+    monthEstimatedCost: number;
+  };
+  categories: UtilityCategorySummary[];
+};
+
+export type FleetSummaryResponse = {
+  summary: FleetSummary;
+};
+
+export type ViewKey = "overview" | "devices" | "map" | "meter" | "billing";
 export type AuthMode = "login" | "register";
 export type DeviceRuntimeStatus = "connected" | "heartbeat" | "error" | "inactive";
 export type StatusFilter = "all" | DeviceRuntimeStatus;
@@ -72,6 +119,7 @@ export type StatusFilter = "all" | DeviceRuntimeStatus;
 export type DeviceRow = {
   device: PublicDevice;
   reading: MeterReading | null;
+  latestConsumption: number | null;
   loadWatts: number | null;
   status: DeviceRuntimeStatus;
   lastSeen: string;
@@ -102,8 +150,22 @@ export type AuthFormState = {
 export type CreateDeviceFormState = {
   devEui: string;
   name: string;
-  energyTariff: string;
+  utilityType: UtilityType;
+  tariffPerUnit: string;
+  unitLabel: string;
   isActive: boolean;
+  latitude: string;
+  longitude: string;
+};
+
+export type UpdateDeviceFormState = {
+  name: string;
+  utilityType: UtilityType;
+  tariffPerUnit: string;
+  unitLabel: string;
+  isActive: boolean;
+  latitude: string;
+  longitude: string;
 };
 
 export type DashboardPageProps = {

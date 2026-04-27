@@ -44,7 +44,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const cost = await calculateDeviceCost({
       devEui,
-      energyTariff: ownership.device.energyTariff,
+      tariffPerUnit: ownership.device.tariffPerUnit,
+      unitLabel: ownership.device.unitLabel,
       start,
       stop,
       calculationMode: query.calculationMode,

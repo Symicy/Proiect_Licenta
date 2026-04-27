@@ -16,7 +16,9 @@ import {
   Lock,
   LogOut,
   Mail,
+  Map as MapIcon,
   Network,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
@@ -69,6 +71,8 @@ const ICON_COMPONENTS: Record<string, LucideIcon> = {
   add_box: SquarePlus,
   expand_less: ChevronUp,
   download: Download,
+  edit: Pencil,
+  map: MapIcon,
 };
 
 export function UIIcon({ name, className = "", filled = false }: UIIconProps) {
@@ -116,9 +120,9 @@ export function AuthScreen({ controller }: AuthScreenProps) {
             </p>
           </div>
           <div className="max-w-md space-y-5">
-            <h1 className="text-5xl font-bold leading-tight tracking-tight">Illuminate your energy insights.</h1>
+            <h1 className="text-5xl font-bold leading-tight tracking-tight">Illuminate your utility insights.</h1>
             <p className="text-lg text-on-surface-variant">
-              High-fidelity analytics for LoRaWAN smart meters. Monitor fleet status, consumption trends,
+              High-fidelity analytics for LoRaWAN smart utility meters. Monitor fleet status, consumption trends,
               and estimated billing in one decisive control center.
             </p>
           </div>
@@ -139,7 +143,7 @@ export function AuthScreen({ controller }: AuthScreenProps) {
             <p className="mt-2 text-on-surface-variant">
               {authMode === "login"
                 ? "Sign in to access your operational dashboard."
-                : "Register to start monitoring your smart meter fleet."}
+                : "Register to start monitoring your smart utility fleet."}
             </p>
 
             <form className="mt-8 space-y-4" onSubmit={handleAuthSubmit}>

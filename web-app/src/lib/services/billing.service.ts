@@ -1,63 +1,66 @@
 import {
-  getEnergyDeltaKwhByDevEui,
-  getEnergySumKwhByDevEui,
+  getConsumptionDeltaByDevEui,
+  getConsumptionSumByDevEui,
 } from "@/lib/services/influx.service";
 
 export type CostCalculationMode = "delta" | "sum";
 
 export type DeviceCostResult = {
   calculationMode: CostCalculationMode;
-  consumedKwh: number;
-  energyTariff: number;
+  consumedUnits: number;
+  tariffPerUnit: number;
+  unitLabel: string;
   estimatedCost: number;
   period: {
     start: string;
     stop: string;
   };
   details: {
-    sumKwh: number;
-    firstValueKwh: number;
-    lastValueKwh: number;
-    deltaKwh: number;
+    sumUnits: number;
+    firstValueUnits: number;
+    lastValueUnits: number;
+    deltaUnits: number;
   };
 };
 
 export async function calculateDeviceCost(params: {
   devEui: string;
-  energyTariff: number;
+  tariffPerUnit: number;
+  unitLabel: string;
   start: Date;
   stop: Date;
   calculationMode: CostCalculationMode;
 }): Promise<DeviceCostResult> {
-  const [sumKwh, deltaResult] = await Promise.all([
-    getEnergySumKwhByDevEui({
+  const [sumUnits, deltaResult] = await Promise.all([
+    getConsumptionSumByDevEui({
       devEui: params.devEui,
       start: params.start,
       stop: params.stop,
     }),
-    getEnergyDeltaKwhByDevEui({
+    getConsumptionDeltaByDevEui({
       devEui: params.devEui,
       start: params.start,
       stop: params.stop,
     }),
   ]);
 
-  const consumedKwh = params.calculationMode === "sum" ? sumKwh : deltaResult.delta;
+  const consumedUnits = params.calculationMode === "sum" ? sumUnits : deltaResult.delta;
 
   return {
     calculationMode: params.calculationMode,
-    consumedKwh,
-    energyTariff: params.energyTariff,
-    estimatedCost: consumedKwh * params.energyTariff,
+    consumedUnits,
+    tariffPerUnit: params.tariffPerUnit,
+    unitLabel: params.unitLabel,
+    estimatedCost: consumedUnits * params.tariffPerUnit,
     period: {
       start: params.start.toISOString(),
       stop: params.stop.toISOString(),
     },
     details: {
-      sumKwh,
-      firstValueKwh: deltaResult.firstValue,
-      lastValueKwh: deltaResult.lastValue,
-      deltaKwh: deltaResult.delta,
+      sumUnits,
+      firstValueUnits: deltaResult.firstValue,
+      lastValueUnits: deltaResult.lastValue,
+      deltaUnits: deltaResult.delta,
     },
   };
 }

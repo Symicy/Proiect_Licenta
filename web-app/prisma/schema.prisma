@@ -24,12 +24,25 @@ enum Role {
   CUSTOMER
 }
 
+enum UtilityType {
+  ELECTRICITY
+  GAS
+  WATER
+  HEATING
+  COOLING
+  OTHER
+}
+
 model Device {
-  id           String  @id @default(uuid())
-  devEui       String  @unique
-  name         String
-  energyTariff Float
-  isActive     Boolean @default(true)
+  id            String      @id @default(uuid())
+  devEui        String      @unique
+  name          String
+  utilityType   UtilityType @default(ELECTRICITY)
+  tariffPerUnit Float
+  unitLabel     String
+  isActive      Boolean     @default(true)
+  latitude      Float?
+  longitude     Float?
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

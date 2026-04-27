@@ -5,6 +5,7 @@ import { errorResponse, serverError, unauthorized, validationError } from "@/lib
 import { getRequestUserContext } from "@/lib/security/request-user";
 import { getDeviceForUserByDevEui, listDevicesForUser } from "@/lib/services/device.service";
 import { getLatestReadingByDevEui, type MeterReading } from "@/lib/services/influx.service";
+import type { UtilityType } from "@/lib/utility";
 import { streamQuerySchema } from "@/lib/validation/telemetry";
 
 export const runtime = "nodejs";
@@ -15,14 +16,18 @@ const DEFAULT_LOOKBACK_HOURS = 24;
 type StreamDevice = {
   devEui: string;
   name: string;
-  energyTariff: number;
+  utilityType: UtilityType;
+  tariffPerUnit: number;
+  unitLabel: string;
   isActive: boolean;
 };
 
 type MeterReadingEvent = {
   devEui: string;
   deviceName: string;
-  energyTariff: number;
+  utilityType: UtilityType;
+  tariffPerUnit: number;
+  unitLabel: string;
   estimatedCostAtReading: number | null;
   reading: MeterReading;
 };
@@ -149,9 +154,11 @@ export async function GET(request: NextRequest) {
               const payload: MeterReadingEvent = {
                 devEui: device.devEui,
                 deviceName: device.name,
-                energyTariff: device.energyTariff,
+                utilityType: device.utilityType,
+                tariffPerUnit: device.tariffPerUnit,
+                unitLabel: device.unitLabel,
                 estimatedCostAtReading:
-                  latest.energy !== null ? latest.energy * device.energyTariff : null,
+                  latest.consumption !== null ? latest.consumption * device.tariffPerUnit : null,
                 reading: latest,
               };
 

@@ -2,7 +2,7 @@ import { InfluxDB } from "@influxdata/influxdb-client";
 
 export type MeterReading = {
   timestamp: string;
-  energy: number | null;
+  consumption: number | null;
   voltage: number | null;
   current: number | null;
 };
@@ -11,6 +11,7 @@ export type AggregationFn = "mean" | "sum" | "min" | "max" | "last";
 
 type MeterReadingRow = {
   _time?: unknown;
+  consumption?: unknown;
   energy?: unknown;
   voltage?: unknown;
   current?: unknown;
@@ -66,7 +67,7 @@ function mapReadingRow(row: MeterReadingRow): MeterReading | null {
 
   return {
     timestamp,
-    energy: normalizeNumber(row.energy),
+    consumption: normalizeNumber(row.consumption ?? row.energy),
     voltage: normalizeNumber(row.voltage),
     current: normalizeNumber(row.current),
   };
@@ -82,7 +83,7 @@ function baseReadingFlux(params: {
   |> range(start: time(v: "${params.start.toISOString()}"), stop: time(v: "${params.stop.toISOString()}"))
   |> filter(fn: (r) => r._measurement == "meter_reading")
   |> filter(fn: (r) => r.devEui == "${escapeFluxString(params.devEui)}")
-  |> filter(fn: (r) => r._field == "energy" or r._field == "voltage" or r._field == "current")`;
+  |> filter(fn: (r) => r._field == "consumption" or r._field == "energy" or r._field == "voltage" or r._field == "current")`;
 }
 
 function sortedReadings(readings: MeterReading[]) {
@@ -167,7 +168,7 @@ export async function getAggregatedReadingsByDevEui(params: {
   return sortedReadings(readings);
 }
 
-async function readSingleEnergyValue(flux: string) {
+async function readSingleConsumptionValue(flux: string) {
   const { queryApi } = createQueryApi();
   const rows = await queryApi.collectRows<{ _value?: unknown }>(flux);
 
@@ -175,7 +176,7 @@ async function readSingleEnergyValue(flux: string) {
   return value ?? 0;
 }
 
-export async function getEnergySumKwhByDevEui(params: {
+export async function getConsumptionSumByDevEui(params: {
   devEui: string;
   start: Date;
   stop: Date;
@@ -186,13 +187,13 @@ export async function getEnergySumKwhByDevEui(params: {
   |> range(start: time(v: "${params.start.toISOString()}"), stop: time(v: "${params.stop.toISOString()}"))
   |> filter(fn: (r) => r._measurement == "meter_reading")
   |> filter(fn: (r) => r.devEui == "${escapeFluxString(params.devEui)}")
-  |> filter(fn: (r) => r._field == "energy")
+  |> filter(fn: (r) => r._field == "consumption" or r._field == "energy")
   |> sum()`;
 
-  return readSingleEnergyValue(flux);
+  return readSingleConsumptionValue(flux);
 }
 
-export async function getEnergyDeltaKwhByDevEui(params: {
+export async function getConsumptionDeltaByDevEui(params: {
   devEui: string;
   start: Date;
   stop: Date;
@@ -203,19 +204,19 @@ export async function getEnergyDeltaKwhByDevEui(params: {
   |> range(start: time(v: "${params.start.toISOString()}"), stop: time(v: "${params.stop.toISOString()}"))
   |> filter(fn: (r) => r._measurement == "meter_reading")
   |> filter(fn: (r) => r.devEui == "${escapeFluxString(params.devEui)}")
-  |> filter(fn: (r) => r._field == "energy")
+  |> filter(fn: (r) => r._field == "consumption" or r._field == "energy")
   |> first()`;
 
   const lastFlux = `from(bucket: "${escapeFluxString(bucket)}")
   |> range(start: time(v: "${params.start.toISOString()}"), stop: time(v: "${params.stop.toISOString()}"))
   |> filter(fn: (r) => r._measurement == "meter_reading")
   |> filter(fn: (r) => r.devEui == "${escapeFluxString(params.devEui)}")
-  |> filter(fn: (r) => r._field == "energy")
+  |> filter(fn: (r) => r._field == "consumption" or r._field == "energy")
   |> last()`;
 
   const [firstValue, lastValue] = await Promise.all([
-    readSingleEnergyValue(firstFlux),
-    readSingleEnergyValue(lastFlux),
+    readSingleConsumptionValue(firstFlux),
+    readSingleConsumptionValue(lastFlux),
   ]);
 
   return {
@@ -224,3 +225,7 @@ export async function getEnergyDeltaKwhByDevEui(params: {
     delta: Math.max(lastValue - firstValue, 0),
   };
 }
+
+// Backward-compatible aliases used by older callers.
+export const getEnergySumKwhByDevEui = getConsumptionSumByDevEui;
+export const getEnergyDeltaKwhByDevEui = getConsumptionDeltaByDevEui;
