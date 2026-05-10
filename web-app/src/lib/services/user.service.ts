@@ -1,4 +1,4 @@
-import type { Role, User } from "@prisma/client";
+import type { CustomerType, Role, User } from "@prisma/client";
 
 import prisma from "@/lib/prisma";
 import { hashPassword } from "@/lib/security/password";
@@ -9,6 +9,7 @@ export type PublicUser = {
   firstName: string;
   lastName: string;
   role: Role;
+  customerType: CustomerType | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -19,6 +20,7 @@ export type CreateUserInput = {
   firstName: string;
   lastName: string;
   role?: Role;
+  customerType?: CustomerType | null;
 };
 
 function normalizeEmail(email: string) {
@@ -41,6 +43,8 @@ export async function getUserById(id: string) {
 
 export async function createUser(input: CreateUserInput) {
   const passwordHash = await hashPassword(input.password);
+  const role = input.role ?? "CUSTOMER";
+  const customerType = role === "CUSTOMER" ? input.customerType ?? "INDIVIDUAL" : null;
 
   return prisma.user.create({
     data: {
@@ -48,7 +52,8 @@ export async function createUser(input: CreateUserInput) {
       passwordHash,
       firstName: input.firstName.trim(),
       lastName: input.lastName.trim(),
-      role: input.role ?? "CUSTOMER",
+      role,
+      customerType,
     },
   });
 }
@@ -60,6 +65,7 @@ export function toPublicUser(user: User): PublicUser {
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role,
+    customerType: user.customerType,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

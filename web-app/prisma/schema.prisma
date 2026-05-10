@@ -14,6 +14,7 @@ model User {
   firstName    String
   lastName     String
   role         Role     @default(CUSTOMER)
+  customerType CustomerType?
   devices      Device[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -22,6 +23,11 @@ model User {
 enum Role {
   ADMIN
   CUSTOMER
+}
+
+enum CustomerType {
+  INDIVIDUAL
+  COMPANY
 }
 
 enum UtilityType {

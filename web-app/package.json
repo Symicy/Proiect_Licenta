@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev-with-prisma.mjs",
+    "dev:next": "next dev",
+    "prisma:generate": "prisma generate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

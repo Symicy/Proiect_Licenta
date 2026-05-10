@@ -2,7 +2,7 @@
 
 import type { DashboardPageProps } from "./types";
 import { useDashboardControllerContext } from "./DashboardControllerContext";
-import { BillingView, DevicesView, MapView, MeterView, OverviewView } from "./DashboardViews";
+import { BillingView, DevicesView, MeterView, OverviewView } from "./DashboardViews";
 
 function DashboardContentSkeleton() {
   return (
@@ -39,7 +39,6 @@ export default function DashboardPage({ initialView = "overview" }: DashboardPag
 
       {!showInitialSkeleton && activeView === "overview" ? <OverviewView controller={controller} /> : null}
       {!showInitialSkeleton && activeView === "devices" ? <DevicesView controller={controller} /> : null}
-      {!showInitialSkeleton && activeView === "map" ? <MapView controller={controller} /> : null}
       {!showInitialSkeleton && activeView === "meter" ? <MeterView controller={controller} /> : null}
       {!showInitialSkeleton && activeView === "billing" ? <BillingView controller={controller} /> : null}
     </>

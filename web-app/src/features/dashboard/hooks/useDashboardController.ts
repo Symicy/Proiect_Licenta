@@ -116,6 +116,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   const [authForm, setAuthForm] = useState<AuthFormState>({
     firstName: "",
     lastName: "",
+    customerType: "INDIVIDUAL",
     email: "",
     password: "",
   });
@@ -622,6 +623,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
           : {
               firstName: authForm.firstName,
               lastName: authForm.lastName,
+              customerType: authForm.customerType,
               email: authForm.email,
               password: authForm.password,
             };

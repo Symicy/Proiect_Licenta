@@ -1,3 +1,4 @@
+import { useState } from "react";
 import dynamic from "next/dynamic";
 
 import { UTILITY_TYPES, defaultUnitLabelForUtilityType, utilityTypeLabel } from "@/lib/utility";
@@ -17,6 +18,13 @@ import {
 type ViewProps = {
   controller: DashboardController;
 };
+
+type HomeMode = "summary" | "map";
+
+const HOME_MODE_OPTIONS = [
+  { value: "summary", label: "Summary", icon: "dashboard" },
+  { value: "map", label: "Map", icon: "map" },
+] as const satisfies Array<{ value: HomeMode; label: string; icon: string }>;
 
 function MapCanvasSkeleton() {
   return (
@@ -45,9 +53,46 @@ export function OverviewView({ controller }: ViewProps) {
     streamStatus,
   } = controller;
   const utilityCategories = fleetSummary?.categories ?? [];
+  const [homeMode, setHomeMode] = useState<HomeMode>("summary");
 
   return (
     <div className="space-y-8">
+      <section className="rounded-xl bg-surface-container-high p-3 md:p-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="px-1">
+            <p className="text-xs uppercase tracking-[0.14em] text-on-surface-variant">Home</p>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight">Fleet Overview</h2>
+          </div>
+
+          <div className="grid w-full grid-cols-2 rounded-full bg-surface-container-low p-1 md:w-auto">
+            {HOME_MODE_OPTIONS.map((option) => {
+              const isSelected = homeMode === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={isSelected}
+                  className={`inline-flex min-w-32 items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] transition ${
+                    isSelected
+                      ? "bg-primary text-[#1a1766]"
+                      : "text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface"
+                  }`}
+                  onClick={() => setHomeMode(option.value)}
+                >
+                  <UIIcon name={option.icon} className="text-[15px]" filled={isSelected} />
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {homeMode === "map" ? (
+        <HomeMapPanel controller={controller} />
+      ) : (
+        <>
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-xl bg-surface-container-high p-6">
           <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Fleet Devices</p>
@@ -239,6 +284,8 @@ export function OverviewView({ controller }: ViewProps) {
           )}
         </div>
       </section>
+        </>
+      )}
     </div>
   );
 }
@@ -772,7 +819,7 @@ export function DevicesView({ controller }: ViewProps) {
   );
 }
 
-export function MapView({ controller }: ViewProps) {
+function HomeMapPanel({ controller }: ViewProps) {
   const {
     devices,
     devicesWithCoordinates,
@@ -838,7 +885,7 @@ export function MapView({ controller }: ViewProps) {
         <DeviceMapCanvas
           devices={devicesWithCoordinates}
           selectedDevEui={selectedDevEui}
-          onSelectDevice={(devEui) => handleSelectDevice(devEui, "map")}
+          onSelectDevice={(devEui) => handleSelectDevice(devEui, "overview")}
           defaultCenter={[45.9432, 24.9668]}
           defaultZoom={6}
         />
@@ -855,6 +902,14 @@ export function MapView({ controller }: ViewProps) {
             <p className="mt-3 font-mono text-xs text-on-surface-variant">
               {selectedMappedDevice.latitude.toFixed(5)}, {selectedMappedDevice.longitude.toFixed(5)}
             </p>
+            <button
+              type="button"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-surface-container-highest px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
+              onClick={() => handleSelectDevice(selectedMappedDevice.devEui, "meter")}
+            >
+              <UIIcon name="visibility" className="text-[14px]" />
+              Open Meter
+            </button>
           </article>
         ) : (
           <p className="rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
@@ -874,7 +929,7 @@ export function MapView({ controller }: ViewProps) {
                     ? "bg-primary text-[#1a1766]"
                     : "bg-surface-container-low text-on-surface hover:bg-surface-container-highest"
                 }`}
-                onClick={() => handleSelectDevice(device.devEui, "map")}
+                onClick={() => handleSelectDevice(device.devEui, "overview")}
               >
                 <p className="text-sm font-semibold">{device.name}</p>
                 <p className={`mt-1 text-xs ${isSelected ? "text-[#1a1766]/80" : "text-on-surface-variant"}`}>

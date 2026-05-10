@@ -1,8 +1,10 @@
 import type { MeterReading } from "@/lib/services/influx.service";
 
 import type {
+  CustomerType,
   DeviceRuntimeStatus,
   PublicDevice,
+  PublicUser,
 } from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -74,6 +76,22 @@ export function formatQuantity(value: number | null | undefined) {
 }
 
 export const formatKwh = formatQuantity;
+
+export function customerTypeLabel(customerType: CustomerType | null | undefined) {
+  if (customerType === "COMPANY") {
+    return "Company";
+  }
+
+  return "Individual";
+}
+
+export function accountTypeLabel(user: PublicUser) {
+  if (user.role === "ADMIN") {
+    return "Administrator";
+  }
+
+  return `${customerTypeLabel(user.customerType)} Customer`;
+}
 
 export function formatLoadWatts(value: number | null | undefined) {
   if (value === null || value === undefined || Number.isNaN(value)) {
