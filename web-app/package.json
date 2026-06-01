@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:web": "next dev",
+    "worker": "ts-node mqtt-worker/index.ts",
+    "dev:all": "concurrently --kill-others-on-fail -n web,worker -c cyan,green \"npm run dev:web\" \"npm run worker\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -33,6 +36,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "prisma": "^7.5.0",
