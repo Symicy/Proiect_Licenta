@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       firstName: payload.firstName,
       lastName: payload.lastName,
       role: "CUSTOMER",
+      customerType: payload.customerType,
     });
 
     const accessToken = await signAccessToken({

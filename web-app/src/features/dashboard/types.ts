@@ -1,12 +1,16 @@
 import type { MeterReading } from "@/lib/services/influx.service";
 import type { UtilityType } from "@/lib/utility";
 
+export type UserRole = "ADMIN" | "CUSTOMER";
+export type CustomerType = "INDIVIDUAL" | "COMPANY";
+
 export type PublicUser = {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: "ADMIN" | "CUSTOMER";
+  role: UserRole;
+  customerType: CustomerType | null;
 };
 
 export type PublicDevice = {
@@ -111,7 +115,7 @@ export type FleetSummaryResponse = {
   summary: FleetSummary;
 };
 
-export type ViewKey = "overview" | "devices" | "map" | "meter" | "billing";
+export type ViewKey = "overview" | "devices" | "meter" | "billing";
 export type AuthMode = "login" | "register";
 export type DeviceRuntimeStatus = "connected" | "heartbeat" | "error" | "inactive";
 export type StatusFilter = "all" | DeviceRuntimeStatus;
@@ -143,6 +147,7 @@ export type NavItem = {
 export type AuthFormState = {
   firstName: string;
   lastName: string;
+  customerType: CustomerType;
   email: string;
   password: string;
 };

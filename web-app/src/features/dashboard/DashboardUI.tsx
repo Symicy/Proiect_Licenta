@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
+  Building2,
   ChevronUp,
   CircleHelp,
   Cpu,
@@ -31,6 +32,7 @@ import {
 
 import { NAV_ITEMS } from "./constants";
 import type { DashboardController } from "./hooks/useDashboardController";
+import { accountTypeLabel } from "./utils";
 
 type UIIconProps = {
   name: string;
@@ -73,7 +75,13 @@ const ICON_COMPONENTS: Record<string, LucideIcon> = {
   download: Download,
   edit: Pencil,
   map: MapIcon,
+  business: Building2,
 };
+
+const CUSTOMER_TYPE_OPTIONS = [
+  { value: "INDIVIDUAL", label: "Individual", icon: "account_circle" },
+  { value: "COMPANY", label: "Company", icon: "business" },
+] as const;
 
 export function UIIcon({ name, className = "", filled = false }: UIIconProps) {
   const IconComponent = ICON_COMPONENTS[name] ?? CircleHelp;
@@ -148,40 +156,75 @@ export function AuthScreen({ controller }: AuthScreenProps) {
 
             <form className="mt-8 space-y-4" onSubmit={handleAuthSubmit}>
               {authMode === "register" ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <label className="block">
+                <>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+                        First Name
+                      </span>
+                      <input
+                        className="w-full rounded-t-lg border-b-2 border-outline-variant/40 bg-surface-container-lowest px-4 py-3 outline-none transition focus:border-primary"
+                        value={authForm.firstName}
+                        onChange={(event) =>
+                          setAuthForm((previous) => ({
+                            ...previous,
+                            firstName: event.target.value,
+                          }))
+                        }
+                        required
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+                        Last Name
+                      </span>
+                      <input
+                        className="w-full rounded-t-lg border-b-2 border-outline-variant/40 bg-surface-container-lowest px-4 py-3 outline-none transition focus:border-primary"
+                        value={authForm.lastName}
+                        onChange={(event) =>
+                          setAuthForm((previous) => ({
+                            ...previous,
+                            lastName: event.target.value,
+                          }))
+                        }
+                        required
+                      />
+                    </label>
+                  </div>
+
+                  <div>
                     <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                      First Name
+                      Account Type
                     </span>
-                    <input
-                      className="w-full rounded-t-lg border-b-2 border-outline-variant/40 bg-surface-container-lowest px-4 py-3 outline-none transition focus:border-primary"
-                      value={authForm.firstName}
-                      onChange={(event) =>
-                        setAuthForm((previous) => ({
-                          ...previous,
-                          firstName: event.target.value,
-                        }))
-                      }
-                      required
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                      Last Name
-                    </span>
-                    <input
-                      className="w-full rounded-t-lg border-b-2 border-outline-variant/40 bg-surface-container-lowest px-4 py-3 outline-none transition focus:border-primary"
-                      value={authForm.lastName}
-                      onChange={(event) =>
-                        setAuthForm((previous) => ({
-                          ...previous,
-                          lastName: event.target.value,
-                        }))
-                      }
-                      required
-                    />
-                  </label>
-                </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {CUSTOMER_TYPE_OPTIONS.map((option) => {
+                        const isSelected = authForm.customerType === option.value;
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            aria-pressed={isSelected}
+                            className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition ${
+                              isSelected
+                                ? "border-primary bg-primary text-[#1a1766]"
+                                : "border-outline-variant/30 bg-surface-container-lowest text-on-surface-variant hover:border-primary hover:text-on-surface"
+                            }`}
+                            onClick={() =>
+                              setAuthForm((previous) => ({
+                                ...previous,
+                                customerType: option.value,
+                              }))
+                            }
+                          >
+                            <UIIcon name={option.icon} className="text-[18px]" filled={isSelected} />
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
               ) : null}
 
               <label className="block">
@@ -337,7 +380,7 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
               <UIIcon name="account_circle" className="text-on-surface text-[20px]" />
               <p className="text-sm font-semibold">{user.firstName} {user.lastName}</p>
             </div>
-            <p className="mt-1 text-xs uppercase tracking-[0.08em] text-on-surface-variant">{user.role}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.08em] text-on-surface-variant">{accountTypeLabel(user)}</p>
             <p className="mt-2 truncate text-xs text-on-surface-variant">{user.email}</p>
 
             <button
