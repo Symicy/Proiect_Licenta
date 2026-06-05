@@ -103,7 +103,7 @@ export function OverviewView({ controller }: ViewProps) {
         <article className="rounded-xl bg-surface-container-high p-6">
           <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Utility Categories</p>
           <p className="mt-4 text-5xl font-black tracking-tight">{fleetSummary?.totals.utilityCategoryCount ?? 0}</p>
-          <p className="mt-2 text-xs text-on-surface-variant">Electricity, water, gas, heating, cooling, other</p>
+          <p className="mt-2 text-xs text-on-surface-variant">Electricity, water, gas, heating, cooling</p>
         </article>
 
         <article className="rounded-xl bg-surface-container-high p-6">
@@ -295,6 +295,10 @@ export function DevicesView({ controller }: ViewProps) {
     devices,
     connectedCount,
     errorCount,
+    claimCode,
+    claimSubmitting,
+    claimError,
+    claimSuccess,
     searchQuery,
     statusFilter,
     filteredDeviceRows,
@@ -307,6 +311,9 @@ export function DevicesView({ controller }: ViewProps) {
     editError,
     editSubmitting,
     setSearchQuery,
+    setClaimCode,
+    setClaimError,
+    setClaimSuccess,
     setStatusFilter,
     handleSelectDevice,
     setShowCreateDevice,
@@ -315,6 +322,7 @@ export function DevicesView({ controller }: ViewProps) {
     setEditForm,
     handleStartEditDevice,
     handleCancelEditDevice,
+    handleClaimDevices,
     handleEditDevice,
   } = controller;
 
@@ -333,6 +341,39 @@ export function DevicesView({ controller }: ViewProps) {
           <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Critical Errors</p>
           <p className="mt-3 text-5xl font-black tracking-tight text-error">{errorCount}</p>
         </article>
+      </section>
+
+      <section className="rounded-xl bg-surface-container-high p-4 md:p-6">
+        <form className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" onSubmit={handleClaimDevices}>
+          <label className="block w-full lg:max-w-md">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+              Claim Code
+            </span>
+            <input
+              className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 font-mono text-sm uppercase outline-none transition focus:border-primary"
+              placeholder="COMPANY-DEMO-2026"
+              value={claimCode}
+              onChange={(event) => {
+                setClaimCode(event.target.value);
+                setClaimError(null);
+                setClaimSuccess(null);
+              }}
+              required
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="primary-gradient-bg inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={claimSubmitting}
+          >
+            <UIIcon name="add_box" className="text-[16px]" />
+            {claimSubmitting ? "Claiming..." : "Claim Devices"}
+          </button>
+        </form>
+
+        {claimError ? <p className="mt-3 text-sm text-error">{claimError}</p> : null}
+        {claimSuccess ? <p className="mt-3 text-sm text-tertiary">{claimSuccess}</p> : null}
       </section>
 
       <section className="rounded-xl bg-surface-container-high p-4 md:p-6">

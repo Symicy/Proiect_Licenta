@@ -1,6 +1,7 @@
 import type { Device, UtilityType } from "@prisma/client";
 
 import prisma from "@/lib/prisma";
+import { syncChirpStackInventory } from "@/lib/services/chirpstack-inventory.service";
 import { normalizeDevEui } from "@/lib/validation/device";
 import { listSimulatorDevices, type SimulatorDiscoveredDevice } from "@/lib/services/simulator.service";
 import { defaultUnitLabelForUtilityType } from "@/lib/utility";
@@ -79,7 +80,7 @@ function toPublicDevice(device: Device): PublicDevice {
     isActive: device.isActive,
     latitude: device.latitude,
     longitude: device.longitude,
-    userId: device.userId,
+    userId: device.userId ?? "",
     createdAt: device.createdAt,
     updatedAt: device.updatedAt,
   };
@@ -118,6 +119,15 @@ function shouldSyncFromSimulator(userId: string) {
   return true;
 }
 
+async function syncDevicesFromExternalSourcesForUser(userId: string) {
+  if (!shouldSyncFromSimulator(userId)) {
+    return;
+  }
+
+  await syncChirpStackInventory();
+  await syncDevicesFromSimulatorForUser(userId);
+}
+
 function hasCoordinateDifference(existing: Device, discovered: SimulatorDiscoveredDevice) {
   return existing.latitude !== discovered.latitude || existing.longitude !== discovered.longitude;
 }
@@ -132,10 +142,6 @@ function resolveUnitLabel(unitLabel: string | undefined, utilityType: UtilityTyp
 }
 
 async function syncDevicesFromSimulatorForUser(userId: string) {
-  if (!shouldSyncFromSimulator(userId)) {
-    return;
-  }
-
   const discoveredDevices = await listSimulatorDevices();
   if (discoveredDevices.length === 0) {
     return;
@@ -169,6 +175,7 @@ async function syncDevicesFromSimulatorForUser(userId: string) {
             latitude: discoveredDevice.latitude,
             longitude: discoveredDevice.longitude,
             userId,
+            claimedAt: new Date(),
           },
         });
 
@@ -220,7 +227,7 @@ async function resolveDeviceOwnership(userId: string, rawDevEui: string): Promis
 }
 
 export async function listDevicesForUser(userId: string) {
-  await syncDevicesFromSimulatorForUser(userId);
+  await syncDevicesFromExternalSourcesForUser(userId);
 
   const devices = await prisma.device.findMany({
     where: { userId },
@@ -266,6 +273,7 @@ export async function createDeviceForUser(
       latitude: input.latitude,
       longitude: input.longitude,
       userId,
+      claimedAt: new Date(),
     },
   });
 

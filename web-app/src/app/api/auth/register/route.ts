@@ -7,6 +7,11 @@ import {
   accessTokenCookieOptions,
   signAccessToken,
 } from "@/lib/security/token";
+import { syncChirpStackInventory } from "@/lib/services/chirpstack-inventory.service";
+import {
+  claimDevicesForUser,
+  validateClaimCodeForCustomerType,
+} from "@/lib/services/claim-code.service";
 import { createUser, getUserByEmail, toPublicUser } from "@/lib/services/user.service";
 import { registerSchema } from "@/lib/validation/auth";
 
@@ -20,6 +25,26 @@ export async function POST(request: NextRequest) {
       return conflict("An account with this email already exists.");
     }
 
+    if (payload.claimCode) {
+      await syncChirpStackInventory();
+      const claimValidation = await validateClaimCodeForCustomerType(payload.claimCode, payload.customerType);
+
+      if (claimValidation.status === "invalid-code") {
+        return validationError(undefined, "Claim code is invalid or no devices are linked to it.");
+      }
+
+      if (claimValidation.status === "customer-type-mismatch") {
+        return validationError(
+          undefined,
+          `This claim code is reserved for ${claimValidation.expectedCustomerType.toLowerCase()} accounts.`,
+        );
+      }
+
+      if (claimValidation.status === "already-claimed-by-other") {
+        return conflict("This claim code has already been used.");
+      }
+    }
+
     const createdUser = await createUser({
       email: payload.email,
       password: payload.password,
@@ -28,6 +53,14 @@ export async function POST(request: NextRequest) {
       role: "CUSTOMER",
       customerType: payload.customerType,
     });
+
+    const claimResult = payload.claimCode
+      ? await claimDevicesForUser({
+          userId: createdUser.id,
+          customerType: createdUser.customerType ?? payload.customerType,
+          claimCode: payload.claimCode,
+        })
+      : null;
 
     const accessToken = await signAccessToken({
       userId: createdUser.id,
@@ -39,6 +72,7 @@ export async function POST(request: NextRequest) {
       {
         user: toPublicUser(createdUser),
         accessToken,
+        claim: claimResult,
       },
       { status: 201 },
     );

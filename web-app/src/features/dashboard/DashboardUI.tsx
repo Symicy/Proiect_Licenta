@@ -12,6 +12,7 @@ import {
   Eye,
   HeartPulse,
   Info,
+  KeyRound,
   LayoutDashboard,
   LineChart,
   Lock,
@@ -76,6 +77,7 @@ const ICON_COMPONENTS: Record<string, LucideIcon> = {
   edit: Pencil,
   map: MapIcon,
   business: Building2,
+  key: KeyRound,
 };
 
 const CUSTOMER_TYPE_OPTIONS = [
@@ -224,6 +226,26 @@ export function AuthScreen({ controller }: AuthScreenProps) {
                       })}
                     </div>
                   </div>
+
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+                      Claim Code
+                    </span>
+                    <div className="relative">
+                      <UIIcon name="key" className="absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant" />
+                      <input
+                        className="w-full rounded-t-lg border-b-2 border-outline-variant/40 bg-surface-container-lowest px-4 py-3 pl-12 font-mono text-sm uppercase outline-none transition focus:border-primary"
+                        placeholder="OPTIONAL"
+                        value={authForm.claimCode}
+                        onChange={(event) =>
+                          setAuthForm((previous) => ({
+                            ...previous,
+                            claimCode: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </label>
                 </>
               ) : null}
 

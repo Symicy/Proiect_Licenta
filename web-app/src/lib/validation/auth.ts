@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalClaimCodeSchema } from "@/lib/validation/claim-code";
 
 const emailSchema = z
   .string()
@@ -27,6 +28,7 @@ export const registerSchema = z.object({
     .min(2, "Last name must contain at least 2 characters.")
     .max(100, "Last name must contain at most 100 characters."),
   customerType: customerTypeSchema.default("INDIVIDUAL"),
+  claimCode: optionalClaimCodeSchema,
 });
 
 export const loginSchema = z.object({

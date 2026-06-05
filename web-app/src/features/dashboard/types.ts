@@ -53,9 +53,18 @@ export type MeResponse = {
 export type AuthResponse = {
   user: PublicUser;
   accessToken: string;
+  claim?: {
+    status: string;
+    claimedCount?: number;
+  } | null;
 };
 
 export type DevicesResponse = {
+  devices: PublicDevice[];
+};
+
+export type ClaimDevicesResponse = {
+  claimedCount: number;
   devices: PublicDevice[];
 };
 
@@ -148,6 +157,7 @@ export type AuthFormState = {
   firstName: string;
   lastName: string;
   customerType: CustomerType;
+  claimCode: string;
   email: string;
   password: string;
 };

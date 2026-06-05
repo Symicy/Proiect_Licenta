@@ -1,391 +1,342 @@
-# Thesis Execution Plan - LoRaWAN Smart Energy Monitoring
+# Thesis Execution Plan - LoRaWAN Smart Utility Monitoring
+
+Last updated: 2026-06-01
 
 ## Current State
-- Prisma relational schema is defined in `prisma/schema.prisma`.
-- Existing migration history still reflects an older model and must be aligned.
-- MQTT ingest worker already writes telemetry to InfluxDB (`mqtt-worker/index.ts`).
-- Next.js app layer is mostly scaffold and still needs API/domain implementation.
 
-## Core Invariants (Must Not Break)
-- Polyglot persistence is strict:
-  - InfluxDB stores telemetry and time-series only.
-  - PostgreSQL stores relational metadata only.
-- Never store sensor readings in Prisma models.
-- `Device.devEui` is the canonical bridge key across ChirpStack, InfluxDB, and frontend mapping.
-- Billing logic pattern: `cost = energyTariff (PostgreSQL) * kWh (InfluxDB)`.
+The project is a working MVP, not a scaffold.
 
-## Decisions Locked
-- Dev migration strategy: local dev DB reset is acceptable when Prisma prompts.
-- Plan scope: full roadmap to MVP + ARIMA forecasting.
+Completed pieces:
 
-## Phased Roadmap
+1. Docker infrastructure for Postgres, InfluxDB, Redis, Mosquitto, ChirpStack, ChirpStack Gateway Bridge, and LWN-Simulator.
+2. Prisma/PostgreSQL relational model for users, customer type, device metadata, ownership, utility type, tariffs, and coordinates.
+3. MQTT worker that subscribes to ChirpStack uplinks and writes normalized meter readings to InfluxDB.
+4. Authenticated Next.js API layer for auth, device CRUD, telemetry reads, billing, SSE streaming, and fleet summary.
+5. Dashboard UI with auth flow, overview, devices, meter, billing, and integrated map mode in the overview page.
+6. Development command `npm run dev:all` that starts both the Prisma-aware Next.js dev server and the MQTT worker.
+7. Claim-code assignment flow for company and individual customer accounts.
+8. Demo provisioning script that creates 50 generated devices across LWN-Simulator, ChirpStack, and the app database.
 
-### Phase 1 - Baseline and Migration Alignment (Blocking)
-1. Verify local infrastructure health from `../docker-compose.yml`.
-2. Validate/format schema in `prisma/schema.prisma`.
-3. Create a new migration to reconcile old migration history with the current User/Device schema.
-4. Generate Prisma client and verify applied constraints:
-   - UUID PKs.
-   - `Role` enum values: `ADMIN`, `CUSTOMER`.
-   - `Device.devEui` unique.
-   - user-device relation with ownership semantics.
+Current next major feature:
+
+1. Phase 7 predictive module: forecasting service, forecast endpoint, and predicted-vs-observed dashboard visualization.
+
+## Core Invariants
+
+These must remain true:
+
+1. InfluxDB stores telemetry and time-series only.
+2. PostgreSQL stores relational metadata only.
+3. No sensor readings are stored in Prisma models.
+4. `Device.devEui` is the canonical bridge key across ChirpStack, MQTT payloads, InfluxDB, and the frontend.
+5. Billing is computed from PostgreSQL tariff metadata and InfluxDB consumption data:
+   `estimatedCost = consumedUnits * tariffPerUnit`.
+6. User ownership must be enforced before device metadata, telemetry, billing, or SSE data is returned.
+7. ChirpStack may provide device inventory metadata, but the app database remains the source of truth for business ownership.
+
+## Current Data Model
+
+Relational schema:
+
+1. `User`
+   - UUID `id`
+   - unique `email`
+   - `passwordHash`
+   - `firstName`
+   - `lastName`
+   - `role`: `ADMIN` or `CUSTOMER`
+   - nullable `customerType`: `INDIVIDUAL` or `COMPANY`
+   - one-to-many relation to `Device`
+2. `Device`
+   - UUID `id`
+   - unique `devEui`
+   - `name`
+   - `utilityType`: `ELECTRICITY`, `GAS`, `WATER`, `HEATING`, `COOLING`, `OTHER`
+   - `tariffPerUnit`
+   - `unitLabel`
+   - `isActive`
+   - optional `latitude` and `longitude`
+   - optional `userId` owner relation
+   - optional `claimCodeHash`
+   - optional `claimCodeLabel`
+   - optional `claimCodeCustomerType`
+   - optional `claimedAt`
+
+Note: `OTHER` remains only as a legacy defensive enum fallback. The current app options and demo fleet use the real meter categories: electricity, gas, water, heating, and cooling.
+
+Telemetry schema:
+
+1. Influx measurement: `meter_reading`
+2. Primary tag: `devEui`
+3. Optional tag: `utilityType`
+4. Fields currently supported by the app:
+   - `consumption`
+   - `energy`
+   - `voltage`
+   - `current`
+
+## Runtime Architecture
+
+Infrastructure:
+
+1. `docker-compose.yml` starts the local LoRaWAN stack and databases.
+2. LWN-Simulator sends simulated LoRaWAN packets to the ChirpStack Gateway Bridge.
+3. ChirpStack publishes decoded uplinks to Mosquitto MQTT.
+4. ChirpStack stores import metadata in `device.tags` and `device.variables`.
+5. `mqtt-worker/index.ts` consumes MQTT uplinks and writes meter readings to InfluxDB.
+6. Next.js imports ChirpStack inventory metadata into PostgreSQL through `syncChirpStackInventory`.
+7. Next.js reads PostgreSQL through Prisma and reads telemetry through the InfluxDB client.
+8. Browser UI consumes only authenticated Next.js APIs and SSE.
+
+Development command:
+
+```powershell
+docker compose up -d
+cd web-app
+npm run dev:all
+```
+
+`npm run dev:all` runs:
+
+1. `npm run dev:web`
+   - executes `node scripts/dev-with-prisma.mjs`
+   - generates Prisma Client before starting Next.js
+   - restarts Next.js when Prisma schema/migrations change
+2. `npm run worker`
+   - executes `ts-node mqtt-worker/index.ts`
+   - subscribes to `application/+/device/+/event/up`
+
+Demo provisioning command:
+
+```powershell
+npm run provision:demo-devices
+```
+
+This script uses the LWN-Simulator HTTP API and direct local ChirpStack PostgreSQL writes. Direct ChirpStack DB writes are acceptable here as a local thesis provisioning shortcut because the local ChirpStack HTTP API is not exposed for this setup. For production, ChirpStack devices should be managed through ChirpStack's supported API.
+
+## Implemented API Surface
+
+Auth:
+
+1. `POST /api/auth/register`
+2. `POST /api/auth/login`
+3. `GET /api/auth/me`
+4. `POST /api/auth/logout`
+
+Devices:
+
+1. `GET /api/devices`
+2. `POST /api/devices`
+3. `POST /api/devices/claim`
+4. `GET /api/devices/[devEui]`
+5. `PATCH /api/devices/[devEui]`
+6. `DELETE /api/devices/[devEui]`
+
+Telemetry and billing:
+
+1. `GET /api/devices/[devEui]/readings`
+2. `GET /api/devices/[devEui]/cost`
+3. `GET /api/devices/summary`
+4. `GET /api/devices/stream`
+
+## Implemented UI Surface
+
+Routes:
+
+1. `/` redirects to `/home`
+2. `/home` shows overview and map mode
+3. `/devices` manages inventory, filters, creation, and editing
+4. `/meter` shows selected-device live readings, chart, and billing details
+5. `/billing` shows selected-device and fleet cost summaries
+
+Current navigation items:
+
+1. Overview
+2. Devices
+3. Meter
+4. Billing
+
+The standalone `/map` route was removed by the latest pulled commit. Map functionality now lives inside the overview page as a mode.
+
+## Verification Status
+
+Verified on 2026-06-01:
+
+1. `npm run lint` passes.
+2. `npx tsc --noEmit` passes.
+3. `npx prisma generate` passes.
+4. `npx prisma migrate status` reports the local database schema is up to date.
+5. Pending migration `20260510120000_add_customer_type` was applied locally.
+6. `npm run dev:all` launches successfully.
+7. `http://localhost:3000` responds with `200`.
+8. `GET /api/auth/me` responds with `401` without a session, as expected.
+9. `20260601143000_add_device_claim_metadata` was applied locally.
+10. `npm run provision:demo-devices` provisioned 50 devices and is idempotent on rerun.
+11. `npm run lint` and `npx tsc --noEmit` pass after the claim-code and provisioning changes.
+
+Known local database state from the last inspection:
+
+1. Demo company user owns 35 generated devices.
+2. Three demo individual users own 5 generated devices each.
+3. Demo utility distribution is 10 electricity, 10 gas, 10 water, 10 heating, and 10 cooling devices.
+4. ChirpStack contains matching demo metadata in `device.tags` and `device.variables`.
+5. InfluxDB had `meter_reading` data, but fresh ingestion must be confirmed during the next simulator demo.
+
+## Completed Roadmap
+
+### Phase 1 - Baseline and Migration Alignment
+
+Status: completed.
+
+Delivered:
+
+1. Prisma schema validation and migration alignment.
+2. UUID primary keys.
+3. `Role` enum with `ADMIN` and `CUSTOMER`.
+4. Unique `Device.devEui`.
+5. Required user-device ownership relation.
 
 ### Phase 2 - Backend Foundation
-1. Add Prisma singleton and service layer in `src/`.
-2. Add auth flows (register/login/me) and auth middleware.
-3. Add request validation and shared API error handling.
+
+Status: completed.
+
+Delivered:
+
+1. Prisma singleton and PostgreSQL adapter setup.
+2. Password hashing.
+3. JWT signing and verification.
+4. Auth APIs.
+5. Request validation.
+6. Shared API response helpers.
+7. Protected API proxy/middleware behavior.
 
 ### Phase 3 - Device Metadata and Ownership APIs
-1. Implement authenticated device CRUD under `src/app/api/`.
-2. Enforce `devEui` normalization and uniqueness checks.
-3. Enforce ownership checks so each user only accesses own devices.
+
+Status: completed.
+
+Delivered:
+
+1. Device validation and `devEui` normalization.
+2. Authenticated device CRUD.
+3. Ownership-safe access checks.
+4. Simulator device discovery and auto-provisioning support.
 
 ### Phase 4 - Influx Read APIs and Billing
-1. Add Influx query service for latest, interval, and aggregated reads by `devEui`.
-2. Add telemetry read endpoints (read-only from InfluxDB).
-3. Add billing service and cost endpoints using tariff x kWh.
 
-### Phase 5 - Real-Time Updates (SSE)
-1. Implement SSE endpoint scoped to authenticated user and owned devices.
-2. Add frontend SSE hook and state synchronization for live dashboard updates.
+Status: completed.
+
+Delivered:
+
+1. Latest, range, and aggregated telemetry reads.
+2. Cost endpoint using `tariffPerUnit` and Influx consumption.
+3. Fleet summary aggregation by utility category.
+
+### Phase 5 - Real-Time Updates
+
+Status: completed.
+
+Delivered:
+
+1. Authenticated SSE endpoint.
+2. Client SSE hook.
+3. Live device status and selected-meter updates in the dashboard.
 
 ### Phase 6 - Dashboard Delivery
-1. Replace placeholder in `src/app/page.tsx` with project entry/navigation.
-2. Build dashboard views:
-   - device inventory
-   - live metrics
-   - historical charts
-   - billing summaries
 
-### Phase 7 - Predictive Module (ARIMA)
-1. Implement forecasting service using historical Influx data.
-2. Expose forecast endpoint(s).
-3. Add dashboard visualization for predicted vs observed values.
+Status: completed.
+
+Delivered:
+
+1. Auth-first dashboard shell.
+2. Overview with fleet summary and map mode.
+3. Device inventory and metadata editing.
+4. Meter detail view.
+5. Billing view.
+6. Logout flow.
+7. Customer type selection in registration.
+
+### Dev Flow Patch - 2026-06-01
+
+Status: completed.
+
+Delivered:
+
+1. Resolved cloud-pull conflict in `package.json`.
+2. Preserved Prisma-aware dev script from `scripts/dev-with-prisma.mjs`.
+3. Restored `worker` and `dev:all` scripts.
+4. Regenerated Prisma Client after `CustomerType` schema change.
+5. Applied `20260510120000_add_customer_type`.
+6. Removed stale `.next` generated route types from the old standalone map route.
+
+### Claim-Code And Demo Fleet Patch - 2026-06-01
+
+Status: completed.
+
+Delivered:
+
+1. Added nullable device ownership so imported devices can exist before claim assignment.
+2. Added claim-code metadata fields to `Device`.
+3. Added registration-time claim-code support.
+4. Added `POST /api/devices/claim` for already registered users.
+5. Added ChirpStack inventory metadata sync from `device.tags` and `device.variables`.
+6. Added `scripts/provision-demo-devices.mjs` and `npm run provision:demo-devices`.
+7. Provisioned 50 generated demo devices near the original simulator device location.
+8. Split generated devices as 7 company and 3 individual devices per utility type.
+9. Mirrored metadata into ChirpStack tags/variables while keeping app ownership in PostgreSQL.
+
+## Remaining Roadmap
+
+### Phase 7 - Predictive Module
+
+Status: next.
+
+Required:
+
+1. Decide forecasting implementation strategy.
+2. Add service that reads historical Influx data and creates forecast points.
+3. Expose forecast endpoint, likely `GET /api/devices/[devEui]/forecast`.
+4. Add validation for forecast horizon, window, and aggregation.
+5. Add predicted-vs-observed visualization in the meter view.
+6. Document the forecasting method clearly for thesis use.
+
+Pragmatic implementation note:
+
+1. A full ARIMA implementation in TypeScript may add risk.
+2. A thesis-safe path is to implement a clear forecasting module with documented assumptions, then call it ARIMA-style only if the method genuinely matches ARIMA behavior.
+3. If strict ARIMA is required, consider isolating forecasting in a Python service or using a proven package rather than hand-rolling math.
 
 ### Phase 8 - Hardening and Thesis Evidence
-1. Add end-to-end verification paths from simulator to UI via `devEui` mapping.
-2. Add regressions for ownership isolation, billing correctness, and SSE reconnect.
-3. Capture reproducible evidence: queries, endpoint checks, screenshots, logs.
 
-## Priority Execution Order
-1. Phase 1
-2. Phase 2
-3. Phase 3
-4. Phase 4
-5. Phase 5
-6. Phase 6
-7. Phase 7
-8. Phase 8
+Status: not started.
 
-## Verification Checklist
-1. Infra: all containers healthy and reachable.
-2. Prisma: format/validate/migrate success and expected SQL shape.
-3. Data model: ownership and uniqueness constraints validated.
-4. Polyglot boundary: telemetry absent from PostgreSQL.
-5. Billing correctness: API result equals manual tariff x kWh checks.
-6. SSE behavior: live updates and reconnect verified.
-7. End-to-end: simulator uplink visible in Influx and user dashboard.
-8. Forecasting: ARIMA endpoint returns usable predictions and dashboard renders correctly.
+Required:
 
-## Relevant Files
-- `prisma/schema.prisma`
-- `prisma/migrations/20260316111822_init/migration.sql`
-- `prisma.config.ts`
-- `.env`
-- `package.json`
-- `mqtt-worker/index.ts`
-- `src/app/page.tsx`
-- `../docker-compose.yml`
-- `../config/chirpstack/chirpstack.toml`
+1. Add regression tests for ownership isolation.
+2. Add billing correctness tests.
+3. Add telemetry query tests.
+4. Add SSE reconnect/stream tests.
+5. Capture evidence:
+   - Docker container status
+   - ChirpStack configuration screenshots
+   - MQTT worker logs
+   - Influx queries
+   - API responses
+   - dashboard screenshots
+   - end-to-end simulator-to-dashboard trace
 
-## Notes for Execution
-- Never run migration in a production-like environment without explicit backup and review.
-- For this project stage, migration execution remains approval-gated before running commands.
-- Keep implementation incremental and test each phase before moving to the next.
+## Known Risks And Cleanup
 
-## Execution Updates
+1. `.env` is tracked in git. Move secrets to local-only files and commit an `.env.example`.
+2. Docker Compose contains development credentials. This is acceptable for local thesis infrastructure, but the thesis should explicitly describe it as local-only.
+3. MQTT worker is still a local Node process, not a Docker Compose service. `dev:all` improves development, but full demo reproducibility would be stronger if the worker became a Compose service later.
+4. Billing currently accepts both `consumption` and `energy` fields. If both exist for the same device/range, billing semantics must be documented or normalized to one canonical field.
+5. Automated tests are still missing.
+6. Some older notes/config comments had encoding damage. New documentation should stay UTF-8 clean or ASCII-only.
 
-### Update 2026-04-20 - Phase 1 Progress
+## Next Actions
 
-#### Steps Done
-1. Verified infrastructure health with docker compose status (PostgreSQL, InfluxDB, ChirpStack, MQTT, Redis, Simulator all running).
-2. Ran Prisma schema formatting and validation.
-3. Ran Prisma migration workflow:
-   - Applied pending migration `20260316111822_init`.
-   - Created and applied alignment migration `20260420131850_init_users_devices`.
-4. Verified migration status: database schema is up to date.
-5. Regenerated Prisma Client successfully.
-
-#### Feedback
-- Phase 1 is completed successfully and the database is now aligned with the current `User` and `Device` schema.
-- Prisma warned about destructive changes in the alignment migration (enum value removal, dropped columns, primary key change).
-- These warnings are acceptable for this stage because this is a development reset-allowed flow, but the same strategy must not be used on production data.
-- The alignment migration includes all expected structural changes: `Role` enum now uses `ADMIN` and `CUSTOMER`, `Device` now has UUID `id` primary key with unique `devEui`, and ownership relation is enforced with required `userId` plus cascade delete.
-
-#### Next Step
-1. Start Phase 2 (Backend Foundation): add Prisma singleton, authentication endpoints, middleware, and validation utilities.
-
-### Update 2026-04-20 - Phase 2 Progress
-
-#### Steps Done
-1. Installed backend foundation dependencies: `bcryptjs`, `jose`, `zod`, and TypeScript type support for bcrypt.
-2. Added Prisma singleton utility in `src/lib/prisma.ts` for stable DB client usage.
-3. Added shared API response helpers in `src/lib/api-response.ts`.
-4. Added auth payload validation schemas in `src/lib/validation/auth.ts`.
-5. Added security utilities:
-   - password hashing/verification in `src/lib/security/password.ts`
-   - JWT signing/verifying and token extraction in `src/lib/security/token.ts`
-6. Added user service layer in `src/lib/services/user.service.ts`.
-7. Implemented auth API routes:
-   - `POST /api/auth/register`
-   - `POST /api/auth/login`
-   - `GET /api/auth/me`
-8. Implemented request auth middleware in `src/middleware.ts` to protect `/api/auth/me` and `/api/devices` paths.
-9. Added `JWT_SECRET` to local `.env` for runtime token signing/verifying.
-10. Ran checks:
-   - TypeScript compile check passed (`npx tsc --noEmit`).
-   - Lint command failed because of pre-existing `no-explicit-any` issues in `mqtt-worker/index.ts`.
-
-#### Feedback
-- Phase 2 core foundation is functionally in place and ready for Phase 3 API/domain work.
-- Authentication now supports both bearer token and httpOnly cookie flows.
-- Middleware path protection is currently scoped to API endpoints that need authentication at this stage.
-- No TypeScript compile errors were introduced by Phase 2 changes.
-- Existing lint debt in `mqtt-worker/index.ts` remains and should be cleaned in a dedicated pass.
-
-#### Next Step
-1. Start Phase 3 (Device Metadata and Ownership APIs): implement authenticated device CRUD, devEui normalization, and ownership enforcement.
-
-### Update 2026-04-20 - Phase 3 Progress
-
-#### Steps Done
-1. Added device validation layer in `src/lib/validation/device.ts`:
-   - strict `devEui` normalization (`trim + lowercase + non-hex cleanup`)
-   - `devEui` format validation (`16-char hex`)
-   - create/update payload schemas for device metadata.
-2. Added request user context helper in `src/lib/security/request-user.ts` to read identity headers injected by middleware.
-3. Added device domain service in `src/lib/services/device.service.ts` with ownership-safe operations:
-   - list devices for authenticated user
-   - create device with uniqueness checks
-   - get/update/delete by `devEui` with ownership enforcement.
-4. Implemented authenticated device API routes:
-   - `GET /api/devices` (list owned devices)
-   - `POST /api/devices` (create device)
-   - `GET /api/devices/[devEui]` (fetch single owned device)
-   - `PATCH /api/devices/[devEui]` (update owned device)
-   - `DELETE /api/devices/[devEui]` (delete owned device)
-5. Resolved pre-existing lint blocker in `mqtt-worker/index.ts` by removing explicit `any` usage and adding typed MQTT payload handling.
-6. Ran checks:
-   - `npm run lint` passed.
-   - `npx tsc --noEmit` passed.
-7. Fixed Prisma runtime configuration for Next.js API execution:
-   - installed `@prisma/adapter-pg` and `pg`
-   - updated `src/lib/prisma.ts` to initialize `PrismaClient` with `PrismaPg` adapter + pooled PostgreSQL connection.
-8. Performed live API smoke test against running app (`http://localhost:3000`) with temporary user/device:
-   - `POST /api/auth/register` succeeded
-   - `POST /api/devices` succeeded
-   - `GET /api/devices` returned owned device list
-   - `GET /api/devices/[devEui]/readings` succeeded
-   - `GET /api/devices/[devEui]/cost` succeeded.
-
-#### Feedback
-- Phase 3 is completed successfully: device metadata CRUD is now protected by authentication and user ownership boundaries.
-- `devEui` is consistently normalized and validated before persistence and route-level access.
-- API behavior now clearly separates `not found`, `forbidden`, and `conflict` scenarios.
-- Project lint/compile baseline is now clean after the MQTT worker typing fix.
-
-#### Next Step
-1. Start Phase 4 (Influx Read APIs and Billing): implement Influx query services and expose telemetry/cost endpoints using `devEui` bridge plus `energyTariff * kWh` logic.
-
-### Update 2026-04-20 - Phase 4 Progress
-
-#### Steps Done
-1. Added telemetry query validation in `src/lib/validation/telemetry.ts`:
-   - range/latest modes
-   - date-range validation (`start < stop`)
-   - aggregation window/function validation
-   - billing calculation mode validation (`delta` or `sum`).
-2. Added Influx read service in `src/lib/services/influx.service.ts` with support for:
-   - latest reading by `devEui`
-   - range readings by `devEui`
-   - aggregated readings by `devEui`
-   - `energy` sum and delta helpers for billing.
-3. Added billing service in `src/lib/services/billing.service.ts` implementing:
-   - `estimatedCost = consumedKwh * energyTariff`
-   - both `delta` and `sum` energy modes.
-4. Implemented authenticated telemetry endpoint:
-   - `GET /api/devices/[devEui]/readings`
-   - supports latest/range/aggregated queries with ownership checks.
-5. Implemented authenticated billing endpoint:
-   - `GET /api/devices/[devEui]/cost`
-   - computes cost using PostgreSQL tariff + Influx kWh data.
-6. Ran checks:
-   - `npm run lint` passed.
-   - `npx tsc --noEmit` passed.
-
-#### Feedback
-- Phase 4 is completed successfully: read-only telemetry and cost logic are now exposed through protected device-scoped endpoints.
-- Polyglot boundary remains intact: telemetry is read from InfluxDB, while tariff metadata is read from PostgreSQL.
-- `devEui` remains the single bridge key for Influx queries and ownership mapping.
-- Cost endpoint returns calculation details (`sum`, `first`, `last`, `delta`) to make billing assumptions explicit and auditable.
-- Runtime issue discovered during testing (Prisma adapter requirement) was resolved and re-validated with successful endpoint smoke tests.
-- Additional terminal matrix validation passed expected status behavior:
-   - unauthorized list devices -> `401`
-   - create/list/get/patch/delete own device -> `200`
-   - access another user device -> `403`
-   - get deleted device -> `404`
-   - readings and cost endpoints -> `200`.
-
-#### Testing Checkpoint
-1. You should start the app and test now, not after all remaining phases.
-2. This is the best backend checkpoint before SSE/dashboard implementation because auth + device CRUD + telemetry + billing APIs are already available.
-
-#### Next Step
-1. Start Phase 5 (Real-Time Updates with SSE): add server push endpoint and client subscription flow.
-
-### Update 2026-04-20 - Phase 5 Progress
-
-#### Steps Done
-1. Added SSE query validation in `src/lib/validation/telemetry.ts`:
-   - optional `devEui` filter for single-device stream
-   - bounded polling interval (`pollMs` between 1000 and 15000 ms).
-2. Implemented authenticated SSE endpoint in `src/app/api/devices/stream/route.ts`:
-   - sends `connected`, `meter-reading`, `heartbeat`, and `stream-error` events
-   - enforces user ownership before streaming filtered `devEui`
-   - polls latest readings from InfluxDB and emits only new timestamps per device.
-3. Added reusable frontend stream hook in `src/lib/hooks/useDeviceSse.ts`:
-   - EventSource setup/cleanup
-   - event listeners and latest reading map by `devEui`
-   - stream status and error state exposure for upcoming dashboard integration.
-4. Ran checks:
-   - `npm run lint` passed.
-   - `npx tsc --noEmit` passed.
-5. Executed live terminal SSE validation:
-   - created a test user and owned device
-   - injected synthetic reading into InfluxDB
-   - opened `/api/devices/stream` with bearer token
-   - confirmed receipt of `connected`, `meter-reading`, and `heartbeat` events.
-
-#### Feedback
-- Phase 5 is completed successfully and real-time delivery is working through SSE.
-- Ownership rules are respected in the stream endpoint, maintaining data isolation per user.
-- `devEui` remains the bridge key for stream filtering and event payloads.
-- `curl` exit code `28` during stream test is expected because the test intentionally used a max-time timeout to end a long-lived SSE connection.
-
-#### Testing Checkpoint
-1. You should test again now (terminal/API), before moving to dashboard UI work.
-2. This checkpoint verifies the real-time backend layer before frontend rendering is introduced.
-
-#### Next Step
-1. Start Phase 6 (Dashboard and UX Delivery): build the actual interface and consume the SSE stream from the frontend.
-
-### Update 2026-04-20 - Phase 6 Progress
-
-#### Steps Done
-1. Replaced placeholder UI in `src/app/page.tsx` with a full Tailwind dashboard flow aligned to the Stitch exports from `google-stich/`.
-2. Implemented an auth-first entry flow:
-   - login/register screen using `/api/auth/login` and `/api/auth/register`
-   - session bootstrap via `/api/auth/me`.
-3. Implemented dashboard shell and navigation views:
-   - `Overview` (fleet KPIs, trend chart, alerts, top consumers)
-   - `Devices` (search/filter table, live status chips, add device form)
-   - `Meter` (live readings, stream health, consumption profile, cost cards)
-   - `Billing` (period cost summaries and per-device live projection table).
-4. Integrated real-time updates from Phase 5 SSE hook (`useDeviceSse`) into device status and live reading display.
-5. Wired selected-device telemetry and billing panels to existing APIs:
-   - `/api/devices/[devEui]/readings`
-   - `/api/devices/[devEui]/cost`.
-6. Updated global visual foundation to Stitch style tokens in Tailwind/global CSS:
-   - Luminous Ledger color hierarchy
-   - Public Sans typography
-   - layered surface styling and gradient CTA treatment.
-7. Updated application metadata and layout baseline in `src/app/layout.tsx`.
-8. Validation executed:
-   - `npm run lint` passed
-   - `npx tsc --noEmit` passed.
-
-#### Feedback
-- Phase 6 core dashboard delivery is now implemented end-to-end in the frontend and connected to the existing backend stack.
-- Design language follows the provided Stitch package while preserving thesis constraints (polyglot persistence unchanged; UI consumes API/SSE only).
-- The UI is responsive and data-driven, with explicit ownership-safe backend reuse through existing protected endpoints.
-- No new backend schema or persistence changes were introduced during this phase.
-
-#### Testing Checkpoint
-1. Start app from `web-app` and validate full UI flow manually:
-   - authenticate
-   - create/select devices
-   - verify live status changes as simulator data arrives
-   - verify billing cards/table update for selected meter.
-2. Confirm SSE behavior in UI:
-   - stream badge transitions (`connecting/open/error`)
-   - heartbeat timestamp updates
-   - selected meter values update without page refresh.
-
-#### Next Step
-1. Start Phase 7 (Predictive Module - ARIMA): implement forecasting service endpoints and add predicted vs observed visualization in dashboard views.
-
-### Update 2026-04-20 - Phase 6 UX Patch (Logout)
-
-#### Steps Done
-1. Added logout API endpoint in `src/app/api/auth/logout/route.ts`:
-   - `POST /api/auth/logout`
-   - clears `access_token` cookie with immediate expiration.
-2. Added frontend logout flow in `src/app/page.tsx`:
-   - introduced `handleLogout()` that calls `/api/auth/logout`
-   - resets authenticated UI state to login mode after successful sign-out.
-3. Added visible Logout controls in dashboard shell:
-   - desktop sidebar user panel
-   - top header actions (visible on mobile as well).
-4. Added inline logout error feedback in header area when sign-out fails.
-5. Validation executed:
-   - `npm run lint` passed
-   - `npx tsc --noEmit` passed
-   - `POST /api/auth/logout` smoke test returned `200`.
-
-#### Feedback
-- The missing logout entry point in the interface is resolved.
-- Sign-out is now explicit and accessible from both desktop and mobile layouts.
-- Session cleanup is server-backed (cookie invalidation), not only client-state reset.
-
-#### Testing Checkpoint
-1. Login with any account, then click `Logout` from header and verify the auth screen appears.
-2. Refresh browser after logout and confirm session does not auto-restore.
-
-#### Next Step
-1. Continue with Phase 7 (Predictive Module - ARIMA).
-
-### Update 2026-04-20 - Phase 6 UX Patch (Stitch Icons)
-
-#### Steps Done
-1. Added Material Symbols support across global UI layers:
-   - added `.material-symbols-outlined` and `.icon-fill` utility classes in `src/app/globals.css`
-   - loaded Google Material Symbols stylesheet in `src/app/layout.tsx` `<head>` for runtime-safe rendering.
-2. Added reusable icon helper in `src/app/page.tsx`:
-   - `UIIcon` component for centralized symbol rendering.
-3. Aligned major UI sections with Stitch icon language in `src/app/page.tsx`:
-   - login screen brand + input icons + submit arrow
-   - sidebar navigation icons and mobile chip icons
-   - dashboard shell controls (stream, refresh, logout, add device)
-   - overview KPI cards and alerts
-   - devices search/table/detail actions and create-device controls
-   - meter stream/cost cards.
-4. Runtime stability hotfix:
-   - removed invalid CSS-level Google font `@import` (which caused Next.js parsing error because imports must precede generated rules)
-   - kept font loading in layout head so icons render without CSS compilation failures.
-5. Validation executed:
-   - `npm run lint` passed
-   - `npx tsc --noEmit` passed.
-
-#### Feedback
-- The previously missing iconography is now restored and visually aligned to the Stitch exports.
-- Icons are now consistently available across desktop and mobile navigation/control surfaces.
-
-#### Testing Checkpoint
-1. Hard refresh the browser and verify symbols render (not fallback text names) in login, nav, and action buttons.
-2. Verify icon visibility specifically in:
-   - sidebar nav + Add Device
-   - header stream/refresh/logout controls
-   - login mail/lock fields and submit arrow.
-
-#### Next Step
-1. Continue with Phase 7 (Predictive Module - ARIMA).
+1. Run a fresh simulator demo with `docker compose up -d` and `npm run dev:all`.
+2. Confirm a new uplink appears in InfluxDB under `meter_reading`.
+3. Confirm the dashboard updates through SSE without refresh.
+4. Start Phase 7 forecasting implementation.
+5. Add tests and thesis evidence after the forecasting module is stable.

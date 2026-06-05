@@ -11,6 +11,7 @@ import type {
   AuthFormState,
   AuthMode,
   AuthResponse,
+  ClaimDevicesResponse,
   CostResponse,
   CreateDeviceFormState,
   DeviceCostResult,
@@ -117,6 +118,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     firstName: "",
     lastName: "",
     customerType: "INDIVIDUAL",
+    claimCode: "",
     email: "",
     password: "",
   });
@@ -126,6 +128,10 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   const [devicesLoading, setDevicesLoading] = useState(false);
   const [devicesError, setDevicesError] = useState<string | null>(null);
   const [selectedDevEui, setSelectedDevEui] = useState<string | null>(dashboardSessionCache.selectedDevEui);
+  const [claimCode, setClaimCode] = useState("");
+  const [claimSubmitting, setClaimSubmitting] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -624,6 +630,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
               firstName: authForm.firstName,
               lastName: authForm.lastName,
               customerType: authForm.customerType,
+              claimCode: authForm.claimCode,
               email: authForm.email,
               password: authForm.password,
             };
@@ -638,6 +645,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       setAuthForm((previous) => ({
         ...previous,
         password: "",
+        claimCode: "",
       }));
     } catch (error) {
       setAuthError(extractErrorMessage(error));
@@ -658,6 +666,9 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       setUser(null);
       setEditingDevEui(null);
       setEditError(null);
+      setClaimCode("");
+      setClaimError(null);
+      setClaimSuccess(null);
 
       dashboardSessionCache.user = null;
       dashboardSessionCache.devicesResolved = false;
@@ -674,6 +685,47 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       setLogoutError(extractErrorMessage(error));
     } finally {
       setLogoutSubmitting(false);
+    }
+  };
+
+  const handleClaimDevices = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    setClaimSubmitting(true);
+    setClaimError(null);
+    setClaimSuccess(null);
+
+    try {
+      const payload = await apiRequest<ClaimDevicesResponse>("/api/devices/claim", {
+        method: "POST",
+        body: JSON.stringify({ claimCode }),
+      });
+
+      setDevices(payload.devices);
+      dashboardSessionCache.devices = payload.devices;
+      dashboardSessionCache.devicesResolved = true;
+
+      setSelectedDevEui((current) => {
+        const nextSelection =
+          current && payload.devices.some((device) => device.devEui === current)
+            ? current
+            : payload.devices[0]?.devEui ?? null;
+
+        dashboardSessionCache.selectedDevEui = nextSelection;
+        return nextSelection;
+      });
+
+      setClaimCode("");
+      setClaimSuccess(
+        payload.claimedCount === 1
+          ? "1 device linked to this account."
+          : `${payload.claimedCount} devices linked to this account.`,
+      );
+      void loadFleetSummary();
+    } catch (error) {
+      setClaimError(extractErrorMessage(error));
+    } finally {
+      setClaimSubmitting(false);
     }
   };
 
@@ -859,6 +911,10 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     devicesLoading,
     devicesError,
     selectedDevEui,
+    claimCode,
+    claimSubmitting,
+    claimError,
+    claimSuccess,
     searchQuery,
     statusFilter,
     showCreateDevice,
@@ -903,6 +959,9 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     setAuthMode,
     setAuthError,
     setAuthForm,
+    setClaimCode,
+    setClaimError,
+    setClaimSuccess,
     setSearchQuery,
     setStatusFilter,
     setShowCreateDevice,
@@ -914,6 +973,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     loadSelectedDeviceData,
     handleAuthSubmit,
     handleLogout,
+    handleClaimDevices,
     handleCreateDevice,
     handleStartEditDevice,
     handleCancelEditDevice,

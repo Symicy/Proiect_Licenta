@@ -4,10 +4,15 @@ export const UTILITY_TYPES = [
   "WATER",
   "HEATING",
   "COOLING",
-  "OTHER",
 ] as const;
 
-export type UtilityType = (typeof UTILITY_TYPES)[number];
+export const KNOWN_UTILITY_TYPES = [...UTILITY_TYPES, "OTHER"] as const;
+
+export type UtilityType = (typeof KNOWN_UTILITY_TYPES)[number];
+
+export function isUtilityType(value: string): value is UtilityType {
+  return (KNOWN_UTILITY_TYPES as readonly string[]).includes(value);
+}
 
 export function defaultUnitLabelForUtilityType(utilityType: UtilityType) {
   switch (utilityType) {
