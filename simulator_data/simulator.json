@@ -1,0 +1,5 @@
+{
+	"nextIDDev": 50,
+	"nextIDGw": 1,
+	"bridgeAddress": "chirpstack-gateway-bridge:1700"
+}

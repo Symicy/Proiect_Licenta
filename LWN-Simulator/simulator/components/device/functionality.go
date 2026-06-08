@@ -52,27 +52,19 @@ func (d *Device) Execute() {
 	}
 
 	d.Print("Open RXs", nil, util.PrintBoth)
-	phy := d.Class.ReceiveWindows(0, 0)
+	downlink, err = d.ReceiveAndProcessDownlink(0, 0)
 
-	if phy != nil {
+	if err != nil {
+		d.Print("", err, util.PrintBoth)
+		return
+	}
 
-		d.Print("Downlink Received", nil, util.PrintBoth)
-		downlinkCounter.Inc()
+	if downlink != nil { //downlink ricevuto
 
-		downlink, err = d.ProcessDownlink(*phy)
-		if err != nil {
-			d.Print("", err, util.PrintBoth)
-			return
-		}
+		d.ExecuteMACCommand(*downlink)
 
-		if downlink != nil { //downlink ricevuto
-
-			d.ExecuteMACCommand(*downlink)
-
-			if d.Info.Status.Mode != util.Retransmission {
-				d.FPendingProcedure(downlink)
-			}
-
+		if d.Info.Status.Mode != util.Retransmission {
+			d.FPendingProcedure(downlink)
 		}
 
 	} else {
@@ -151,28 +143,19 @@ func (d *Device) FPendingProcedure(downlink *dl.InformationDownlink) {
 			//ack sent in resolveDownlinks ergo open Receive Windows
 
 			d.Print("Open RXs", nil, util.PrintBoth)
-			phy := d.Class.ReceiveWindows(0, 0)
+			downlink, err = d.ReceiveAndProcessDownlink(0, 0)
 
 			if !d.CanExecute() { //stop
 				return
 			}
 
-			if phy != nil {
+			if err != nil {
+				d.Print("", err, util.PrintBoth)
+			}
 
-				d.Print("Downlink Received", nil, util.PrintBoth)
-				downlinkCounter.Inc()
+			if downlink != nil { //downlink ricevuto
 
-				downlink, err = d.ProcessDownlink(*phy)
-				if err != nil {
-					d.Print("", err, util.PrintBoth)
-
-				}
-
-				if downlink != nil { //downlink ricevuto
-
-					d.ExecuteMACCommand(*downlink)
-
-				}
+				d.ExecuteMACCommand(*downlink)
 
 			} else {
 
@@ -203,6 +186,74 @@ func (d *Device) FPendingProcedure(downlink *dl.InformationDownlink) {
 
 	d.Info.Status.Mode = util.Normal
 
+}
+
+func (d *Device) ReceiveAndProcessDownlink(delayRX1 time.Duration, delayRX2 time.Duration) (*dl.InformationDownlink, error) {
+
+	candidates := d.receiveDownlinkCandidates(delayRX1, delayRX2)
+	if len(candidates) == 0 {
+		return nil, nil
+	}
+
+	ignoredDownlinks := 0
+	var lastErr error
+	for _, phy := range candidates {
+		if phy == nil {
+			continue
+		}
+
+		downlink, err := d.ProcessDownlink(*phy)
+		if err == nil {
+			d.Print("Downlink Received", nil, util.PrintBoth)
+			downlinkCounter.Inc()
+			return downlink, nil
+		}
+
+		ignoredDownlinks++
+		lastErr = err
+	}
+
+	if d.Class.GetClass() != classes.ClassA && lastErr != nil {
+		return nil, lastErr
+	}
+
+	if ignoredDownlinks > 0 {
+		d.Print("Ignored invalid downlinks", nil, util.PrintBoth)
+	}
+
+	return nil, nil
+}
+
+func (d *Device) receiveDownlinkCandidates(delayRX1 time.Duration, delayRX2 time.Duration) []*lorawan.PHYPayload {
+
+	if d.Class.GetClass() != classes.ClassA {
+		phy := d.Class.ReceiveWindows(delayRX1, delayRX2)
+		if phy == nil {
+			return nil
+		}
+		return []*lorawan.PHYPayload{phy}
+	}
+
+	var downlinks []*lorawan.PHYPayload
+	for i := 0; i < 2 && i < len(d.Info.RX); i++ {
+
+		var delay time.Duration
+		if i == 0 {
+			delay = delayRX1
+		} else {
+			delay = delayRX2
+		}
+
+		d.Info.Forwarder.Register(d.Info.RX[i].GetListeningFrequency(), d.Info.DevEUI, &d.Info.ReceivedDownlink)
+
+		candidates := d.Info.RX[i].OpenWindowAll(delay, &d.Info.ReceivedDownlink)
+
+		d.Info.Forwarder.UnRegister(d.Info.RX[i].GetListeningFrequency(), d.Info.DevEUI)
+
+		downlinks = append(downlinks, candidates...)
+	}
+
+	return downlinks
 }
 
 func (d *Device) ADRProcedure() {

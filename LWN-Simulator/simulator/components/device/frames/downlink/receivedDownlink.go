@@ -8,7 +8,7 @@ import (
 
 type ReceivedDownlink struct {
 	Mutex    sync.Mutex
-	Downlink *lorawan.PHYPayload
+	Downlinks []*lorawan.PHYPayload
 	Notify   *sync.Cond
 	IsOpen   bool
 }
@@ -22,7 +22,7 @@ func (b *ReceivedDownlink) Push(data *lorawan.PHYPayload) {
 	b.Mutex.Lock()
 	if b.IsOpen {
 
-		b.Downlink = data
+		b.Downlinks = append(b.Downlinks, data)
 		b.Notify.Broadcast()
 
 	}
@@ -37,15 +37,30 @@ func (b *ReceivedDownlink) Pull() *lorawan.PHYPayload {
 
 	defer b.Mutex.Unlock()
 
-	if b.Downlink == nil {
+	if len(b.Downlinks) == 0 {
 		b.Notify.Wait()
 	}
 
-	phy := b.Downlink
+	if len(b.Downlinks) == 0 {
+		return nil
+	}
 
-	b.Downlink = nil //reset
+	phy := b.Downlinks[0]
+	b.Downlinks = b.Downlinks[1:]
 
 	return phy
+
+}
+
+func (b *ReceivedDownlink) PullAll() []*lorawan.PHYPayload {
+
+	b.Mutex.Lock()
+	defer b.Mutex.Unlock()
+
+	downlinks := b.Downlinks
+	b.Downlinks = nil
+
+	return downlinks
 
 }
 
@@ -64,6 +79,7 @@ func (b *ReceivedDownlink) Signal() {
 func (b *ReceivedDownlink) Open() {
 	b.Mutex.Lock()
 	b.IsOpen = true
+	b.Downlinks = nil
 	b.Mutex.Unlock()
 }
 

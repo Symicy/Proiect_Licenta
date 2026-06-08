@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import { latLngBounds } from "leaflet";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+
+import type { UtilityType } from "@/lib/utility";
 
 type DeviceWithCoordinates = {
   id: string;
   devEui: string;
   name: string;
+  utilityType: UtilityType;
   latitude: number;
   longitude: number;
 };
@@ -25,6 +28,19 @@ type FitBoundsControllerProps = {
   defaultCenter: [number, number];
   defaultZoom: number;
 };
+
+const MAP_MARKER_COLORS: Record<UtilityType, string> = {
+  ELECTRICITY: "#facc15",
+  GAS: "#fb923c",
+  WATER: "#38bdf8",
+  HEATING: "#f87171",
+  COOLING: "#60a5fa",
+  OTHER: "#a7f3d0",
+};
+
+function markerColor(utilityType: UtilityType) {
+  return MAP_MARKER_COLORS[utilityType] ?? "#c0c1ff";
+}
 
 function FitBoundsController({
   devices,
@@ -59,7 +75,7 @@ export default function DeviceMapCanvas({
   defaultZoom,
 }: DeviceMapCanvasProps) {
   return (
-    <div className="h-[460px] overflow-hidden rounded-xl">
+    <div className="h-[600px] min-h-[560px] overflow-hidden rounded-xl xl:h-[700px]">
       <MapContainer center={defaultCenter} zoom={defaultZoom} className="h-full w-full" scrollWheelZoom>
         <FitBoundsController
           devices={devices}
@@ -73,31 +89,48 @@ export default function DeviceMapCanvas({
 
         {devices.map((device) => {
           const isSelected = device.devEui === selectedDevEui;
+          const color = markerColor(device.utilityType);
           return (
-            <CircleMarker
-              key={device.id}
-              center={[device.latitude, device.longitude]}
-              radius={isSelected ? 10 : 8}
-              pathOptions={{
-                color: isSelected ? "#c0c1ff" : "#4ae176",
-                fillColor: isSelected ? "#c0c1ff" : "#4ae176",
-                fillOpacity: isSelected ? 0.95 : 0.8,
-                weight: 2,
-              }}
-              eventHandlers={{
-                click: () => onSelectDevice(device.devEui),
-              }}
-            >
-              <Popup>
-                <div>
-                  <p style={{ fontWeight: 700, margin: 0 }}>{device.name}</p>
-                  <p style={{ margin: "4px 0 0", fontSize: "12px" }}>{device.devEui}</p>
-                  <p style={{ margin: "4px 0 0", fontSize: "12px" }}>
-                    {device.latitude.toFixed(5)}, {device.longitude.toFixed(5)}
-                  </p>
-                </div>
-              </Popup>
-            </CircleMarker>
+            <Fragment key={device.id}>
+              {isSelected ? (
+                <CircleMarker
+                  center={[device.latitude, device.longitude]}
+                  radius={22}
+                  pathOptions={{
+                    color,
+                    fillColor: color,
+                    fillOpacity: 0.16,
+                    opacity: 0.95,
+                    weight: 3,
+                  }}
+                  interactive={false}
+                />
+              ) : null}
+              <CircleMarker
+                center={[device.latitude, device.longitude]}
+                radius={isSelected ? 15 : 8}
+                pathOptions={{
+                  color: isSelected ? "#ffffff" : "#06101f",
+                  fillColor: color,
+                  fillOpacity: isSelected ? 1 : 0.92,
+                  opacity: 1,
+                  weight: isSelected ? 4 : 2,
+                }}
+                eventHandlers={{
+                  click: () => onSelectDevice(device.devEui),
+                }}
+              >
+                <Popup>
+                  <div>
+                    <p style={{ fontWeight: 700, margin: 0 }}>{device.name}</p>
+                    <p style={{ margin: "4px 0 0", fontSize: "12px" }}>{device.devEui}</p>
+                    <p style={{ margin: "4px 0 0", fontSize: "12px" }}>
+                      {device.latitude.toFixed(5)}, {device.longitude.toFixed(5)}
+                    </p>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            </Fragment>
           );
         })}
       </MapContainer>

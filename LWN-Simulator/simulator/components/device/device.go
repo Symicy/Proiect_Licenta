@@ -30,7 +30,9 @@ func (d *Device) Run() {
 
 	defer d.Resources.ExitGroup.Done()
 
-	d.OtaaActivation()
+	if !d.OtaaActivation() {
+		return
+	}
 
 	ticker := time.NewTicker(d.Info.Configuration.SendInterval)
 
@@ -59,7 +61,9 @@ func (d *Device) Run() {
 				d.Execute()
 
 			} else {
-				d.OtaaActivation()
+				if !d.OtaaActivation() {
+					return
+				}
 			}
 
 		}

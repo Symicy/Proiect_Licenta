@@ -1,0 +1,19 @@
+{
+	"0": {
+		"id": 0,
+		"info": {
+			"macAddress": "a1b2c3d4e5f67890",
+			"keepAlive": 10,
+			"active": true,
+			"typeGateway": false,
+			"name": "Gateway_Licenta",
+			"location": {
+				"latitude": 47.6462928,
+				"longitude": 23.5490119,
+				"altitude": 0
+			},
+			"ip": "",
+			"port": ""
+		}
+	}
+}

@@ -3,6 +3,8 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
   Building2,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   CircleHelp,
   Cpu,
@@ -72,6 +74,8 @@ const ICON_COMPONENTS: Record<string, LucideIcon> = {
   search: Search,
   aod: Cpu,
   add_box: SquarePlus,
+  chevron_left: ChevronLeft,
+  chevron_right: ChevronRight,
   expand_less: ChevronUp,
   download: Download,
   edit: Pencil,
@@ -167,6 +171,7 @@ export function AuthScreen({ controller }: AuthScreenProps) {
                       <input
                         className="w-full rounded-t-lg border-b-2 border-outline-variant/40 bg-surface-container-lowest px-4 py-3 outline-none transition focus:border-primary"
                         value={authForm.firstName}
+                        autoComplete="given-name"
                         onChange={(event) =>
                           setAuthForm((previous) => ({
                             ...previous,
@@ -183,6 +188,7 @@ export function AuthScreen({ controller }: AuthScreenProps) {
                       <input
                         className="w-full rounded-t-lg border-b-2 border-outline-variant/40 bg-surface-container-lowest px-4 py-3 outline-none transition focus:border-primary"
                         value={authForm.lastName}
+                        autoComplete="family-name"
                         onChange={(event) =>
                           setAuthForm((previous) => ({
                             ...previous,
@@ -259,6 +265,7 @@ export function AuthScreen({ controller }: AuthScreenProps) {
                     type="email"
                     className="w-full rounded-t-lg border-b-2 border-outline-variant/40 bg-surface-container-lowest px-4 py-3 pl-12 outline-none transition focus:border-primary"
                     value={authForm.email}
+                    autoComplete="email"
                     onChange={(event) =>
                       setAuthForm((previous) => ({
                         ...previous,
@@ -280,6 +287,7 @@ export function AuthScreen({ controller }: AuthScreenProps) {
                     type="password"
                     className="w-full rounded-t-lg border-b-2 border-outline-variant/40 bg-surface-container-lowest px-4 py-3 pl-12 pr-11 outline-none transition focus:border-primary"
                     value={authForm.password}
+                    autoComplete={authMode === "login" ? "current-password" : "new-password"}
                     onChange={(event) =>
                       setAuthForm((previous) => ({
                         ...previous,
@@ -349,7 +357,7 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
 
   return (
     <div className="flex min-h-screen bg-surface text-on-surface">
-      <aside className="hidden w-72 shrink-0 flex-col bg-surface px-5 py-8 lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col overflow-y-auto bg-surface px-5 py-8 lg:flex">
         <div>
           <p className="brand-gradient-text text-3xl font-black tracking-tight">WattWise</p>
           <p className="mt-2 text-xs uppercase tracking-[0.15em] text-on-surface-variant">Premium Tier</p>
@@ -462,17 +470,45 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
                 Refresh
               </button>
 
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-full bg-surface-container-high px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={() => {
-                  void handleLogout();
-                }}
-                disabled={logoutSubmitting}
-              >
-                <UIIcon name="logout" className="text-[15px]" />
-                {logoutSubmitting ? "Signing out..." : "Logout"}
-              </button>
+              <details className="group relative">
+                <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full bg-surface-container-high px-2 py-1.5 pr-3 text-xs font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container-highest [&::-webkit-details-marker]:hidden">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-black text-[#1a1766]">
+                    {user.firstName.charAt(0)}
+                    {user.lastName.charAt(0)}
+                  </span>
+                  <span className="hidden max-w-32 truncate sm:inline">{accountTypeLabel(user)}</span>
+                </summary>
+
+                <div className="absolute right-0 mt-2 w-72 rounded-lg border border-outline-variant/20 bg-surface-container-high p-4 shadow-2xl">
+                  <div className="flex items-start gap-3">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-sm font-black text-primary">
+                      {user.firstName.charAt(0)}
+                      {user.lastName.charAt(0)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">
+                        {user.firstName} {user.lastName}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-on-surface-variant">{user.email}</p>
+                      <p className="mt-2 text-xs uppercase tracking-[0.08em] text-on-surface-variant">
+                        {accountTypeLabel(user)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-surface-container-highest px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => {
+                      void handleLogout();
+                    }}
+                    disabled={logoutSubmitting}
+                  >
+                    <UIIcon name="logout" className="text-[15px]" />
+                    {logoutSubmitting ? "Signing out..." : "Logout"}
+                  </button>
+                </div>
+              </details>
             </div>
           </div>
 
@@ -480,27 +516,28 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
             <div className="mt-4 rounded-lg bg-error/10 px-3 py-2 text-xs text-error">{logoutError}</div>
           ) : null}
 
-          <div className="mt-4 flex gap-2 overflow-x-auto lg:hidden">
-            {NAV_ITEMS.map((item) => {
-              const isActive = item.key === activeView;
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] ${
-                    isActive ? "bg-primary text-[#1a1766]" : "bg-surface-container-high text-on-surface-variant"
-                  }`}
-                  onClick={() => setActiveViewWithRoute(item.key)}
-                >
-                  <UIIcon name={item.icon} className="text-[14px]" filled={isActive} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
+        <main className="flex-1 px-4 pb-28 pt-6 md:px-8 md:py-8">{children}</main>
+
+        <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 gap-1 rounded-2xl border border-outline-variant/20 bg-surface/95 p-1.5 shadow-2xl backdrop-blur-xl lg:hidden">
+          {NAV_ITEMS.map((item) => {
+            const isActive = item.key === activeView;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[0.65rem] font-bold uppercase tracking-[0.05em] transition ${
+                  isActive ? "bg-primary text-[#1a1766]" : "text-on-surface-variant hover:bg-surface-container-high"
+                }`}
+                onClick={() => setActiveViewWithRoute(item.key)}
+              >
+                <UIIcon name={item.icon} className="text-[18px]" filled={isActive} />
+                <span className="max-w-full truncate">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );

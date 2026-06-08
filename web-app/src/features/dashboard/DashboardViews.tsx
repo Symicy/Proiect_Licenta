@@ -1,15 +1,29 @@
-import { useState } from "react";
+import { useMemo, useState, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from "react";
 import dynamic from "next/dynamic";
 
-import { UTILITY_TYPES, defaultUnitLabelForUtilityType, utilityTypeLabel } from "@/lib/utility";
+import { UTILITY_TYPES, defaultUnitLabelForUtilityType, type UtilityType, utilityTypeLabel } from "@/lib/utility";
+import type { MeterReading } from "@/lib/services/influx.service";
 
-import type { DashboardController } from "./hooks/useDashboardController";
+import {
+  BillingUtilityChart,
+  FleetCostDonut,
+  MeterAreaChart,
+  TopConsumersChart,
+  UtilityConsumptionChart,
+  type BillingChartPoint,
+  type DeviceRankingPoint,
+  type MeterSeriesPoint,
+  type UtilityChartPoint,
+  utilityColor,
+} from "./DashboardCharts";
 import { UIIcon } from "./DashboardUI";
+import type { DashboardController } from "./hooks/useDashboardController";
+import type { CreateDeviceFormState, DeviceRow, UpdateDeviceFormState } from "./types";
 import {
   clamp,
   formatCurrency,
-  formatQuantity,
   formatLoadWatts,
+  formatQuantity,
   formatRelativeTime,
   statusClasses,
   statusLabel,
@@ -20,22 +34,297 @@ type ViewProps = {
 };
 
 type HomeMode = "summary" | "map";
+type MapUtilityFilter = "all" | UtilityType;
 
 const HOME_MODE_OPTIONS = [
   { value: "summary", label: "Summary", icon: "dashboard" },
   { value: "map", label: "Map", icon: "map" },
 ] as const satisfies Array<{ value: HomeMode; label: string; icon: string }>;
 
+const STATUS_FILTERS = ["all", "connected", "heartbeat", "error", "inactive"] as const;
+const DEVICE_PAGE_SIZE = 10;
+const BILLING_PAGE_SIZE = 10;
+
+function getTotalPages(totalItems: number, pageSize: number) {
+  return Math.max(1, Math.ceil(totalItems / pageSize));
+}
+
+function getCurrentPage(page: number, totalPages: number) {
+  return Math.min(Math.max(page, 1), totalPages);
+}
+
+function getPageWindow<TItem>(items: TItem[], page: number, pageSize: number) {
+  const startIndex = (page - 1) * pageSize;
+  return items.slice(startIndex, startIndex + pageSize);
+}
+
 function MapCanvasSkeleton() {
-  return (
-    <div className="h-[460px] animate-pulse rounded-xl bg-surface-container-low" />
-  );
+  return <div className="h-[600px] min-h-[560px] animate-pulse rounded-lg bg-surface-container-low xl:h-[700px]" />;
 }
 
 const DeviceMapCanvas = dynamic(() => import("./components/DeviceMapCanvas"), {
   ssr: false,
   loading: () => <MapCanvasSkeleton />,
 });
+
+function Panel({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <section className={`rounded-lg bg-surface-container-high p-5 md:p-6 ${className}`.trim()}>{children}</section>;
+}
+
+function SectionHeader({
+  title,
+  subtitle,
+  eyebrow,
+  action,
+}: {
+  title: string;
+  subtitle?: string;
+  eyebrow?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div>
+        {eyebrow ? <p className="text-xs font-bold uppercase tracking-[0.14em] text-on-surface-variant">{eyebrow}</p> : null}
+        <h2 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">{title}</h2>
+        {subtitle ? <p className="mt-1 text-sm text-on-surface-variant">{subtitle}</p> : null}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function SegmentedButton({
+  isSelected,
+  children,
+  onClick,
+}: {
+  isSelected: boolean;
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={isSelected}
+      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-xs font-bold uppercase tracking-[0.08em] transition ${
+        isSelected
+          ? "bg-primary text-[#1a1766]"
+          : "text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface"
+      }`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  detail,
+  icon,
+  tone = "primary",
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+  icon: string;
+  tone?: "primary" | "success" | "warning" | "neutral";
+}) {
+  const toneClasses = {
+    primary: "bg-primary/12 text-primary",
+    success: "bg-tertiary/10 text-tertiary",
+    warning: "bg-error/10 text-error",
+    neutral: "bg-surface-container-highest text-on-surface",
+  };
+
+  return (
+    <article className="rounded-lg bg-surface-container-high p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">{label}</p>
+          <p className="mt-3 text-4xl font-black tracking-tight">{value}</p>
+        </div>
+        <span className={`inline-flex rounded-lg p-2 ${toneClasses[tone]}`}>
+          <UIIcon name={icon} className="text-[18px]" filled />
+        </span>
+      </div>
+      <p className="mt-2 text-xs text-on-surface-variant">{detail}</p>
+    </article>
+  );
+}
+
+function QuantityWithUnit({
+  value,
+  unit,
+  valueClassName = "font-mono",
+}: {
+  value: number | null | undefined;
+  unit: string;
+  valueClassName?: string;
+}) {
+  return (
+    <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+      <span className={valueClassName}>{formatQuantity(value)}</span>
+      <span className="text-xs text-on-surface-variant">{unit}</span>
+    </span>
+  );
+}
+
+function UtilityChip({ utilityType }: { utilityType: UtilityType }) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full bg-surface-container-low px-2.5 py-1 text-xs font-semibold">
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: utilityColor(utilityType) }} />
+      {utilityTypeLabel(utilityType)}
+    </span>
+  );
+}
+
+function StatusChip({ status }: { status: DeviceRow["status"] }) {
+  return (
+    <span className={`inline-flex rounded-full px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.08em] ${statusClasses(status)}`}>
+      {statusLabel(status)}
+    </span>
+  );
+}
+
+function PaginationControls({
+  page,
+  totalPages,
+  totalItems,
+  pageSize,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalItems <= pageSize) {
+    return null;
+  }
+
+  const startItem = (page - 1) * pageSize + 1;
+  const endItem = Math.min(page * pageSize, totalItems);
+
+  return (
+    <div className="mt-4 flex flex-col gap-3 rounded-lg bg-surface-container-low px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+        Showing {startItem}-{endItem} of {totalItems}
+      </p>
+      <div className="flex items-center justify-between gap-2 sm:justify-end">
+        <button
+          type="button"
+          className="inline-flex min-h-9 items-center gap-2 rounded-full bg-surface-container-high px-3 text-xs font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+        >
+          <UIIcon name="chevron_left" className="text-[15px]" />
+          Previous
+        </button>
+        <span className="min-w-16 rounded-full bg-surface-container-highest px-3 py-2 text-center font-mono text-xs text-on-surface">
+          {page} / {totalPages}
+        </span>
+        <button
+          type="button"
+          className="inline-flex min-h-9 items-center gap-2 rounded-full bg-surface-container-high px-3 text-xs font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={page >= totalPages}
+          onClick={() => onPageChange(page + 1)}
+        >
+          Next
+          <UIIcon name="chevron_right" className="text-[15px]" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function toUtilityChartPoints(controller: DashboardController): UtilityChartPoint[] {
+  return (controller.fleetSummary?.categories ?? []).map((category) => ({
+    utilityType: category.utilityType,
+    label: utilityTypeLabel(category.utilityType),
+    unitLabel: category.unitLabel,
+    today: category.today.consumedUnits,
+    week: category.week.consumedUnits,
+    month: category.month.consumedUnits,
+    cost: category.month.estimatedCost,
+    devices: category.deviceCount,
+    active: category.activeDeviceCount,
+  }));
+}
+
+function toTopConsumerPoints(rows: DeviceRow[]): DeviceRankingPoint[] {
+  return rows
+    .filter((row) => row.latestConsumption !== null)
+    .sort((first, second) => (second.latestConsumption ?? 0) - (first.latestConsumption ?? 0))
+    .slice(0, 6)
+    .map((row) => ({
+      name: row.device.name,
+      devEui: row.device.devEui,
+      utilityType: row.device.utilityType,
+      value: row.latestConsumption ?? 0,
+      unitLabel: row.device.unitLabel,
+    }));
+}
+
+function toMeterSeries(readings: MeterReading[]): MeterSeriesPoint[] {
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  return readings
+    .filter((reading) => reading.consumption !== null && Number.isFinite(reading.consumption))
+    .map((reading) => ({
+      timestamp: reading.timestamp,
+      label: formatter.format(new Date(reading.timestamp)),
+      consumption: reading.consumption ?? 0,
+    }));
+}
+
+function toBillingChartPoints(rows: DeviceRow[]): BillingChartPoint[] {
+  const grouped = new Map<UtilityType, BillingChartPoint>();
+
+  for (const row of rows) {
+    const existing =
+      grouped.get(row.device.utilityType) ??
+      ({
+        utilityType: row.device.utilityType,
+        label: utilityTypeLabel(row.device.utilityType),
+        estimatedCost: 0,
+        consumption: 0,
+        devices: 0,
+      } satisfies BillingChartPoint);
+
+    existing.devices += 1;
+    existing.consumption += row.latestConsumption ?? 0;
+    existing.estimatedCost += row.latestConsumption !== null ? row.latestConsumption * row.device.tariffPerUnit : 0;
+    grouped.set(row.device.utilityType, existing);
+  }
+
+  return [...grouped.values()].sort((first, second) => second.estimatedCost - first.estimatedCost);
+}
+
+function toDeviceCostRanking(rows: DeviceRow[]) {
+  return rows
+    .map((row) => ({
+      ...row,
+      estimatedCost: row.latestConsumption !== null ? row.latestConsumption * row.device.tariffPerUnit : 0,
+    }))
+    .sort((first, second) => second.estimatedCost - first.estimatedCost)
+    .slice(0, 5);
+}
 
 export function OverviewView({ controller }: ViewProps) {
   const {
@@ -48,242 +337,180 @@ export function OverviewView({ controller }: ViewProps) {
     fleetSummaryError,
     liveByCategory,
     recentAlerts,
-    topConsumers,
+    deviceRows,
     handleSelectDevice,
     streamStatus,
   } = controller;
-  const utilityCategories = fleetSummary?.categories ?? [];
   const [homeMode, setHomeMode] = useState<HomeMode>("summary");
 
+  const utilityChartPoints = useMemo(() => toUtilityChartPoints(controller), [controller]);
+  const topConsumerPoints = useMemo(() => toTopConsumerPoints(deviceRows), [deviceRows]);
+
   return (
-    <div className="space-y-8">
-      <section className="rounded-xl bg-surface-container-high p-3 md:p-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="px-1">
-            <p className="text-xs uppercase tracking-[0.14em] text-on-surface-variant">Home</p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight">Fleet Overview</h2>
-          </div>
-
-          <div className="grid w-full grid-cols-2 rounded-full bg-surface-container-low p-1 md:w-auto">
-            {HOME_MODE_OPTIONS.map((option) => {
-              const isSelected = homeMode === option.value;
-
-              return (
-                <button
+    <div className="space-y-6">
+      <Panel className="p-4">
+        <SectionHeader
+          eyebrow="Home"
+          title="Fleet Overview"
+          subtitle="Operational health, live telemetry, and utility cost distribution."
+          action={
+            <div className="grid w-full grid-cols-2 rounded-full bg-surface-container-low p-1 md:w-auto">
+              {HOME_MODE_OPTIONS.map((option) => (
+                <SegmentedButton
                   key={option.value}
-                  type="button"
-                  aria-pressed={isSelected}
-                  className={`inline-flex min-w-32 items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] transition ${
-                    isSelected
-                      ? "bg-primary text-[#1a1766]"
-                      : "text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface"
-                  }`}
+                  isSelected={homeMode === option.value}
                   onClick={() => setHomeMode(option.value)}
                 >
-                  <UIIcon name={option.icon} className="text-[15px]" filled={isSelected} />
+                  <UIIcon name={option.icon} className="text-[15px]" filled={homeMode === option.value} />
                   {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+                </SegmentedButton>
+              ))}
+            </div>
+          }
+        />
+      </Panel>
 
       {homeMode === "map" ? (
         <HomeMapPanel controller={controller} />
       ) : (
         <>
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-xl bg-surface-container-high p-6">
-          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Fleet Devices</p>
-          <p className="mt-4 text-5xl font-black tracking-tight">{devices.length}</p>
-          <p className="mt-2 text-xs text-on-surface-variant">{activeDeviceCount} active</p>
-        </article>
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <KpiCard label="Fleet Devices" value={devices.length} detail={`${activeDeviceCount} active devices`} icon="router" />
+            <KpiCard
+              label="Utility Categories"
+              value={fleetSummary?.totals.utilityCategoryCount ?? 0}
+              detail="Electricity, water, gas, heating, cooling"
+              icon="dashboard"
+              tone="neutral"
+            />
+            <KpiCard
+              label="Fleet Cost (30d)"
+              value={formatCurrency(fleetSummary?.totals.monthEstimatedCost)}
+              detail={`Today: ${formatCurrency(fleetSummary?.totals.todayEstimatedCost)}`}
+              icon="payments"
+            />
+            <KpiCard
+              label="Fleet Health"
+              value={`${fleetHealthPercent}%`}
+              detail={`${errorCount} critical | Stream: ${streamStatus}`}
+              icon="monitor_heart"
+              tone={errorCount > 0 ? "warning" : "success"}
+            />
+          </section>
 
-        <article className="rounded-xl bg-surface-container-high p-6">
-          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Utility Categories</p>
-          <p className="mt-4 text-5xl font-black tracking-tight">{fleetSummary?.totals.utilityCategoryCount ?? 0}</p>
-          <p className="mt-2 text-xs text-on-surface-variant">Electricity, water, gas, heating, cooling</p>
-        </article>
+          {fleetSummaryLoading ? (
+            <Panel className="text-sm text-on-surface-variant">Loading category summary...</Panel>
+          ) : null}
 
-        <article className="rounded-xl bg-surface-container-high p-6">
-          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Fleet Cost (30d)</p>
-          <p className="mt-4 text-5xl font-black tracking-tight">{formatCurrency(fleetSummary?.totals.monthEstimatedCost)}</p>
-          <p className="mt-2 text-xs text-on-surface-variant">Today: {formatCurrency(fleetSummary?.totals.todayEstimatedCost)}</p>
-        </article>
+          {fleetSummaryError ? <Panel className="bg-error/10 text-sm text-error">{fleetSummaryError}</Panel> : null}
 
-        <article className="rounded-xl bg-surface-container-high p-6">
-          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Fleet Health</p>
-          <div className="mt-4 flex items-end justify-between gap-3">
-            <p className="text-5xl font-black tracking-tight text-tertiary">{fleetHealthPercent}%</p>
-            <p className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">{errorCount} critical</p>
-          </div>
-          <p className="mt-2 text-xs text-on-surface-variant">Stream: {streamStatus}</p>
-        </article>
-      </section>
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+            <Panel className="xl:col-span-7">
+              <SectionHeader
+                title="Utility Consumption"
+                subtitle="Aggregated consumption for today, week, and the last 30 days."
+                eyebrow="Today / Week / 30d"
+              />
+              <div className="mt-5">
+                <UtilityConsumptionChart data={utilityChartPoints} />
+              </div>
+            </Panel>
 
-      <section className="rounded-xl bg-surface-container-high p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="text-xl font-bold">Consumption By Utility Category</h3>
-            <p className="mt-1 text-sm text-on-surface-variant">Aggregated by category for today, week, and 30 days.</p>
-          </div>
-          <p className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">Today / Week / 30d</p>
-        </div>
+            <Panel className="xl:col-span-5">
+              <SectionHeader title="Cost Mix" subtitle="30-day estimated cost by utility category." eyebrow="Fleet cost" />
+              <div className="mt-4">
+                <FleetCostDonut data={utilityChartPoints} />
+              </div>
+            </Panel>
+          </section>
 
-        {fleetSummaryLoading ? (
-          <div className="mt-5 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-            Loading category summary...
-          </div>
-        ) : null}
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+            <Panel className="xl:col-span-7">
+              <SectionHeader title="Live Snapshot" subtitle="Current usage and cost across each utility." eyebrow="Stream" />
+              {liveByCategory.length > 0 ? (
+                <div className="mt-5 overflow-hidden rounded-lg border border-outline-variant/20">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-surface-container-low text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
+                      <tr>
+                        <th className="px-4 py-3">Utility</th>
+                        <th className="px-4 py-3">Devices</th>
+                        <th className="px-4 py-3">Latest</th>
+                        <th className="px-4 py-3">Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {liveByCategory.map((category) => (
+                        <tr key={`live-${category.utilityType}-${category.unitLabel}`} className="border-t border-outline-variant/15">
+                          <td className="px-4 py-3">
+                            <UtilityChip utilityType={category.utilityType} />
+                          </td>
+                          <td className="px-4 py-3 font-mono text-xs">{category.deviceCount}</td>
+                          <td className="px-4 py-3">
+                            <QuantityWithUnit value={category.latestConsumption} unit={category.unitLabel} />
+                          </td>
+                          <td className="px-4 py-3 font-mono">{formatCurrency(category.liveEstimatedCost)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="mt-5 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
+                  Waiting for live telemetry to build category snapshot.
+                </p>
+              )}
+            </Panel>
 
-        {fleetSummaryError ? (
-          <div className="mt-5 rounded-lg bg-error/10 px-4 py-3 text-sm text-error">
-            {fleetSummaryError}
-          </div>
-        ) : null}
+            <Panel className="xl:col-span-5">
+              <SectionHeader title="Recent Alerts" subtitle="Live operational notices and stream state." eyebrow="Live" />
+              <div className="mt-5 space-y-3">
+                {recentAlerts.length > 0 ? (
+                  recentAlerts.map((alert) => (
+                    <article
+                      key={alert.id}
+                      className={`rounded-lg px-4 py-3 ${
+                        alert.level === "error" ? "bg-error/10 text-error" : "bg-surface-container-low text-on-surface"
+                      }`}
+                    >
+                      <p className="inline-flex items-center gap-2 text-sm font-semibold">
+                        <UIIcon name={alert.level === "error" ? "warning" : "info"} className="text-[16px]" />
+                        {alert.title}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed opacity-90">{alert.body}</p>
+                    </article>
+                  ))
+                ) : (
+                  <p className="rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
+                    No active alerts. Stream heartbeat is stable.
+                  </p>
+                )}
+              </div>
+            </Panel>
+          </section>
 
-        {!fleetSummaryLoading && !fleetSummaryError ? (
-          utilityCategories.length > 0 ? (
-            <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
-              {utilityCategories.map((category) => (
-                <article
-                  key={`category-${category.utilityType}-${category.unitLabel}`}
-                  className="rounded-lg bg-surface-container-low p-4"
+          <Panel>
+            <SectionHeader title="Top Devices By Latest Usage" subtitle="Fast ranking of the current highest consumers." eyebrow="Live ranking" />
+            <div className="mt-5">
+              <TopConsumersChart data={topConsumerPoints} />
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {topConsumerPoints.slice(0, 4).map((point) => (
+                <button
+                  type="button"
+                  key={point.devEui}
+                  className="rounded-lg bg-surface-container-low px-4 py-3 text-left transition hover:bg-surface-container-highest"
+                  onClick={() => handleSelectDevice(point.devEui, "meter")}
                 >
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-base font-bold">{utilityTypeLabel(category.utilityType)}</h4>
-                    <span className="text-xs text-on-surface-variant">
-                      {category.activeDeviceCount}/{category.deviceCount} active
-                    </span>
+                  <p className="text-sm font-semibold">{point.name}</p>
+                  <p className="mt-1 font-mono text-xs text-on-surface-variant">{point.devEui}</p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <UtilityChip utilityType={point.utilityType} />
+                    <QuantityWithUnit value={point.value} unit={point.unitLabel} valueClassName="text-lg font-bold" />
                   </div>
-                  <p className="mt-1 text-xs text-on-surface-variant">Unit: {category.unitLabel}</p>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                    <div className="rounded-md bg-surface px-3 py-2">
-                      <p className="text-on-surface-variant">Today</p>
-                      <p className="mt-1 font-semibold">{formatQuantity(category.today.consumedUnits)} {category.unitLabel}</p>
-                      <p className="mt-0.5 font-mono">{formatCurrency(category.today.estimatedCost)}</p>
-                    </div>
-                    <div className="rounded-md bg-surface px-3 py-2">
-                      <p className="text-on-surface-variant">Week</p>
-                      <p className="mt-1 font-semibold">{formatQuantity(category.week.consumedUnits)} {category.unitLabel}</p>
-                      <p className="mt-0.5 font-mono">{formatCurrency(category.week.estimatedCost)}</p>
-                    </div>
-                    <div className="rounded-md bg-surface px-3 py-2">
-                      <p className="text-on-surface-variant">30d</p>
-                      <p className="mt-1 font-semibold">{formatQuantity(category.month.consumedUnits)} {category.unitLabel}</p>
-                      <p className="mt-0.5 font-mono">{formatCurrency(category.month.estimatedCost)}</p>
-                    </div>
-                  </div>
-                </article>
+                </button>
               ))}
             </div>
-          ) : (
-            <p className="mt-5 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-              No category data available yet.
-            </p>
-          )
-        ) : null}
-      </section>
-
-      <section className="grid grid-cols-1 gap-8 xl:grid-cols-12">
-        <article className="rounded-xl bg-surface-container-high p-6 xl:col-span-7">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold">Live Snapshot By Utility</h3>
-            <span className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">stream</span>
-          </div>
-
-          {liveByCategory.length > 0 ? (
-            <div className="mt-5 overflow-x-auto">
-              <table className="w-full min-w-[560px] text-left text-sm">
-                <thead>
-                  <tr className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
-                    <th className="pb-3 pr-4">Category</th>
-                    <th className="pb-3 pr-4">Devices</th>
-                    <th className="pb-3 pr-4">Latest Consumption</th>
-                    <th className="pb-3 pr-4">Live Cost Snapshot</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {liveByCategory.map((category) => (
-                    <tr key={`live-${category.utilityType}-${category.unitLabel}`} className="border-t border-outline-variant/20">
-                      <td className="py-3 pr-4 font-semibold">{utilityTypeLabel(category.utilityType)}</td>
-                      <td className="py-3 pr-4 font-mono text-xs">{category.deviceCount}</td>
-                      <td className="py-3 pr-4 font-mono">{formatQuantity(category.latestConsumption)} {category.unitLabel}</td>
-                      <td className="py-3 pr-4 font-mono">{formatCurrency(category.liveEstimatedCost)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="mt-5 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-              Waiting for live telemetry to build category snapshot.
-            </p>
-          )}
-        </article>
-
-        <article className="rounded-xl bg-surface-container-high p-6 xl:col-span-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold">Recent Alerts</h3>
-            <span className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">live</span>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            {recentAlerts.length > 0 ? (
-              recentAlerts.map((alert) => (
-                <article
-                  key={alert.id}
-                  className={`rounded-lg px-4 py-3 ${
-                    alert.level === "error" ? "bg-error/10 text-error" : "bg-surface-container-low text-on-surface"
-                  }`}
-                >
-                  <p className="inline-flex items-center gap-2 text-sm font-semibold">
-                    <UIIcon name={alert.level === "error" ? "warning" : "info"} className="text-[16px]" />
-                    {alert.title}
-                  </p>
-                  <p className="mt-1 text-xs leading-relaxed opacity-90">{alert.body}</p>
-                </article>
-              ))
-            ) : (
-              <p className="rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-                No active alerts. Stream heartbeat is stable.
-              </p>
-            )}
-          </div>
-        </article>
-      </section>
-
-      <section className="rounded-xl bg-surface-container-high p-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold">Top Devices By Latest Usage</h3>
-          <span className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">live ranking</span>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-          {topConsumers.length > 0 ? (
-            topConsumers.map((row) => (
-              <button
-                type="button"
-                key={row.device.devEui}
-                className="rounded-lg bg-surface-container-low px-4 py-3 text-left transition hover:bg-surface-container-highest"
-                onClick={() => handleSelectDevice(row.device.devEui, "meter")}
-              >
-                <p className="text-sm font-semibold">{row.device.name}</p>
-                <p className="mt-1 text-xs text-on-surface-variant">{row.device.devEui}</p>
-                <p className="mt-1 text-xs text-on-surface-variant">{utilityTypeLabel(row.device.utilityType)}</p>
-                <p className="mt-2 text-lg font-bold">
-                  {formatQuantity(row.latestConsumption)} {row.device.unitLabel}
-                </p>
-              </button>
-            ))
-          ) : (
-            <p className="rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-              No usage values available yet.
-            </p>
-          )}
-        </div>
-      </section>
+          </Panel>
         </>
       )}
     </div>
@@ -325,82 +552,109 @@ export function DevicesView({ controller }: ViewProps) {
     handleClaimDevices,
     handleEditDevice,
   } = controller;
+  const [claimOpen, setClaimOpen] = useState(false);
+  const shouldShowClaim = claimOpen || Boolean(claimError || claimSuccess);
+  const [devicePage, setDevicePage] = useState(1);
+  const deviceTotalPages = getTotalPages(filteredDeviceRows.length, DEVICE_PAGE_SIZE);
+  const currentDevicePage = getCurrentPage(devicePage, deviceTotalPages);
+  const paginatedDeviceRows = useMemo(
+    () => getPageWindow(filteredDeviceRows, currentDevicePage, DEVICE_PAGE_SIZE),
+    [currentDevicePage, filteredDeviceRows],
+  );
 
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <article className="rounded-xl bg-surface-container-high p-5">
-          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Total Fleet</p>
-          <p className="mt-3 text-5xl font-black tracking-tight">{devices.length}</p>
-        </article>
-        <article className="rounded-xl bg-surface-container-high p-5">
-          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Connected</p>
-          <p className="mt-3 text-5xl font-black tracking-tight text-tertiary">{connectedCount}</p>
-        </article>
-        <article className="rounded-xl bg-surface-container-high p-5">
-          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Critical Errors</p>
-          <p className="mt-3 text-5xl font-black tracking-tight text-error">{errorCount}</p>
-        </article>
+        <KpiCard label="Total Fleet" value={devices.length} detail="Devices linked to this account" icon="router" />
+        <KpiCard label="Connected" value={connectedCount} detail="Live telemetry received recently" icon="wifi_tethering" tone="success" />
+        <KpiCard label="Critical Errors" value={errorCount} detail="Devices with stale or failed telemetry" icon="warning" tone={errorCount > 0 ? "warning" : "neutral"} />
       </section>
 
-      <section className="rounded-xl bg-surface-container-high p-4 md:p-6">
-        <form className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" onSubmit={handleClaimDevices}>
-          <label className="block w-full lg:max-w-md">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-              Claim Code
-            </span>
-            <input
-              className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 font-mono text-sm uppercase outline-none transition focus:border-primary"
-              placeholder="COMPANY-DEMO-2026"
-              value={claimCode}
-              onChange={(event) => {
-                setClaimCode(event.target.value);
-                setClaimError(null);
-                setClaimSuccess(null);
-              }}
-              required
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="primary-gradient-bg inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={claimSubmitting}
-          >
-            <UIIcon name="add_box" className="text-[16px]" />
-            {claimSubmitting ? "Claiming..." : "Claim Devices"}
-          </button>
-        </form>
-
-        {claimError ? <p className="mt-3 text-sm text-error">{claimError}</p> : null}
-        {claimSuccess ? <p className="mt-3 text-sm text-tertiary">{claimSuccess}</p> : null}
-      </section>
-
-      <section className="rounded-xl bg-surface-container-high p-4 md:p-6">
+      <Panel>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="w-full lg:w-96">
-            <div className="relative">
-              <UIIcon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant" />
-              <input
-                className="w-full rounded-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 pl-11 text-sm outline-none transition focus:border-primary"
-                placeholder="Search by devEui or device name"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-              />
-            </div>
-          </div>
-
+          <SectionHeader
+            title="Device Inventory"
+            subtitle="Search, filter, claim, and maintain your utility meters."
+            eyebrow={`${filteredDeviceRows.length} visible`}
+          />
           <div className="flex flex-wrap items-center gap-2">
-            {(["all", "connected", "heartbeat", "error", "inactive"] as const).map((value) => (
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-full bg-surface-container-highest px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
+              onClick={() => setClaimOpen((previous) => !previous)}
+            >
+              <UIIcon name="key" className="text-[14px]" />
+              Claim
+            </button>
+            <button
+              type="button"
+              className="primary-gradient-bg inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90"
+              onClick={() => setShowCreateDevice(true)}
+            >
+              <UIIcon name="add" className="text-[14px]" />
+              Add Device
+            </button>
+          </div>
+        </div>
+
+        {shouldShowClaim ? (
+          <form className="mt-5 rounded-lg bg-surface-container-low p-4" onSubmit={handleClaimDevices}>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+              <label className="block flex-1">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Claim Code</span>
+                <input
+                  className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 font-mono text-sm uppercase outline-none transition focus:border-primary"
+                  placeholder="COMPANY-DEMO-2026"
+                  value={claimCode}
+                  onChange={(event) => {
+                    setClaimCode(event.target.value);
+                    setClaimError(null);
+                    setClaimSuccess(null);
+                  }}
+                  required
+                />
+              </label>
+              <button
+                type="submit"
+                className="primary-gradient-bg inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={claimSubmitting}
+              >
+                <UIIcon name="add_box" className="text-[16px]" />
+                {claimSubmitting ? "Claiming..." : "Claim Devices"}
+              </button>
+            </div>
+            {claimError ? <p className="mt-3 text-sm text-error">{claimError}</p> : null}
+            {claimSuccess ? <p className="mt-3 text-sm text-tertiary">{claimSuccess}</p> : null}
+          </form>
+        ) : null}
+
+        <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative w-full lg:max-w-md">
+            <UIIcon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant" />
+            <input
+              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 pl-11 text-sm outline-none transition focus:border-primary"
+              placeholder="Search by devEui or device name"
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setDevicePage(1);
+              }}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {STATUS_FILTERS.map((value) => (
               <button
                 key={value}
                 type="button"
-                className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] ${
+                className={`rounded-full px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition ${
                   statusFilter === value
                     ? "bg-primary text-[#1a1766]"
                     : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest"
                 }`}
-                onClick={() => setStatusFilter(value)}
+                onClick={() => {
+                  setStatusFilter(value);
+                  setDevicePage(1);
+                }}
               >
                 {value}
               </button>
@@ -408,71 +662,56 @@ export function DevicesView({ controller }: ViewProps) {
           </div>
         </div>
 
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[980px] text-left">
-            <thead>
-              <tr className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
-                <th className="pb-3 pr-4">Device Name</th>
-                <th className="pb-3 pr-4">devEui</th>
-                <th className="pb-3 pr-4">Utility</th>
-                <th className="pb-3 pr-4">Tariff</th>
-                <th className="pb-3 pr-4">Status</th>
-                <th className="pb-3 pr-4">Last Seen</th>
-                <th className="pb-3 pr-4 text-right">Load (W)</th>
-                <th className="pb-3 pr-4">Coordinates</th>
-                <th className="pb-3 text-right">Action</th>
+        <div className="mt-5 hidden overflow-hidden rounded-lg border border-outline-variant/20 md:block">
+          <table className="w-full text-left">
+            <thead className="sticky top-0 bg-surface-container-low text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
+              <tr>
+                <th className="px-4 py-3">Device</th>
+                <th className="px-4 py-3">Utility</th>
+                <th className="px-4 py-3">Tariff</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Last Seen</th>
+                <th className="px-4 py-3 text-right">Load</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredDeviceRows.map((row) => (
-                <tr
-                  key={row.device.id}
-                  className="border-t border-outline-variant/20 text-sm hover:bg-surface-container-low"
-                >
-                  <td className="py-4 pr-4 font-semibold">
-                    <span className="inline-flex items-center gap-2">
-                      <UIIcon name="aod" className="text-[16px] text-primary" />
-                      {row.device.name}
-                    </span>
+              {paginatedDeviceRows.map((row) => (
+                <tr key={row.device.id} className="border-t border-outline-variant/15 text-sm hover:bg-surface-container-low">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold">{row.device.name}</p>
+                    <p className="mt-1 font-mono text-xs text-on-surface-variant">{row.device.devEui}</p>
                   </td>
-                  <td className="py-4 pr-4 font-mono text-xs text-on-surface-variant">{row.device.devEui}</td>
-                  <td className="py-4 pr-4 text-on-surface-variant">{utilityTypeLabel(row.device.utilityType)}</td>
-                  <td className="py-4 pr-4 font-mono text-xs text-on-surface-variant">
+                  <td className="px-4 py-3">
+                    <UtilityChip utilityType={row.device.utilityType} />
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-on-surface-variant">
                     {formatCurrency(row.device.tariffPerUnit)} / {row.device.unitLabel}
                   </td>
-                  <td className="py-4 pr-4">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.08em] ${statusClasses(
-                        row.status,
-                      )}`}
-                    >
-                      {statusLabel(row.status)}
-                    </span>
+                  <td className="px-4 py-3">
+                    <StatusChip status={row.status} />
                   </td>
-                  <td className="py-4 pr-4 text-on-surface-variant">{row.lastSeen}</td>
-                  <td className="py-4 pr-4 text-right font-mono">{formatLoadWatts(row.loadWatts)}</td>
-                  <td className="py-4 pr-4 font-mono text-xs text-on-surface-variant">
-                    {typeof row.device.latitude === "number" && typeof row.device.longitude === "number"
-                      ? `${row.device.latitude.toFixed(5)}, ${row.device.longitude.toFixed(5)}`
-                      : "Not set"}
-                  </td>
-                  <td className="py-4 text-right">
+                  <td className="px-4 py-3 text-on-surface-variant">{row.lastSeen}</td>
+                  <td className="px-4 py-3 text-right font-mono">{formatLoadWatts(row.loadWatts)} W</td>
+                  <td className="px-4 py-3 text-right">
                     <div className="inline-flex items-center gap-2">
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-highest px-3 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
+                        title="Open meter details"
+                        aria-label={`Open details for ${row.device.name}`}
+                        className="inline-flex rounded-full bg-surface-container-highest p-2 text-primary transition hover:bg-primary hover:text-[#1a1766]"
                         onClick={() => handleSelectDevice(row.device.devEui, "meter")}
                       >
-                        <UIIcon name="visibility" className="text-[14px]" />
-                        Details
+                        <UIIcon name="visibility" className="text-[15px]" />
                       </button>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-highest px-3 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container-high"
+                        title="Edit device"
+                        aria-label={`Edit ${row.device.name}`}
+                        className="inline-flex rounded-full bg-surface-container-highest p-2 text-on-surface transition hover:bg-surface-container"
                         onClick={() => handleStartEditDevice(row.device)}
                       >
-                        <UIIcon name="edit" className="text-[14px]" />
-                        Edit
+                        <UIIcon name="edit" className="text-[15px]" />
                       </button>
                     </div>
                   </td>
@@ -482,380 +721,282 @@ export function DevicesView({ controller }: ViewProps) {
           </table>
         </div>
 
+        <div className="mt-5 grid grid-cols-1 gap-3 md:hidden">
+          {paginatedDeviceRows.map((row) => (
+            <article key={`mobile-${row.device.id}`} className="rounded-lg bg-surface-container-low p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{row.device.name}</p>
+                  <p className="mt-1 font-mono text-xs text-on-surface-variant">{row.device.devEui}</p>
+                </div>
+                <StatusChip status={row.status} />
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <UtilityChip utilityType={row.device.utilityType} />
+                <span className="rounded-full bg-surface-container px-2.5 py-1 font-mono text-xs text-on-surface-variant">
+                  {formatCurrency(row.device.tariffPerUnit)} / {row.device.unitLabel}
+                </span>
+                <span className="rounded-full bg-surface-container px-2.5 py-1 font-mono text-xs text-on-surface-variant">
+                  {formatLoadWatts(row.loadWatts)} W
+                </span>
+              </div>
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#1a1766]"
+                  onClick={() => handleSelectDevice(row.device.devEui, "meter")}
+                >
+                  <UIIcon name="visibility" className="text-[14px]" />
+                  Details
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-full bg-surface-container-highest p-2 text-on-surface"
+                  onClick={() => handleStartEditDevice(row.device)}
+                  aria-label={`Edit ${row.device.name}`}
+                >
+                  <UIIcon name="edit" className="text-[15px]" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+
         {filteredDeviceRows.length === 0 ? (
           <p className="mt-4 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
             No devices matched your filters.
           </p>
         ) : null}
-      </section>
 
-      <section className="rounded-xl bg-surface-container-high p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-xl font-bold">Register New Device</h3>
+        <PaginationControls
+          page={currentDevicePage}
+          totalPages={deviceTotalPages}
+          totalItems={filteredDeviceRows.length}
+          pageSize={DEVICE_PAGE_SIZE}
+          onPageChange={setDevicePage}
+        />
+      </Panel>
+
+      {showCreateDevice ? (
+        <DeviceFormModal
+          title="Register New Device"
+          mode="create"
+          form={createForm}
+          error={createError}
+          submitting={createSubmitting}
+          onSubmit={handleCreateDevice}
+          onClose={() => setShowCreateDevice(false)}
+          setForm={setCreateForm}
+        />
+      ) : null}
+
+      {editingDevEui ? (
+        <DeviceFormModal
+          title="Edit Device"
+          mode="edit"
+          form={editForm}
+          devEui={editingDevEui}
+          error={editError}
+          submitting={editSubmitting}
+          onSubmit={handleEditDevice}
+          onClose={handleCancelEditDevice}
+          setForm={setEditForm}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormState>({
+  title,
+  mode,
+  form,
+  devEui,
+  error,
+  submitting,
+  onSubmit,
+  onClose,
+  setForm,
+}: {
+  title: string;
+  mode: "create" | "edit";
+  form: TForm;
+  devEui?: string;
+  error: string | null;
+  submitting: boolean;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onClose: () => void;
+  setForm: Dispatch<SetStateAction<TForm>>;
+}) {
+  const setField = <K extends keyof TForm>(key: K, value: TForm[K]) => {
+    setForm((previous) => ({
+      ...previous,
+      [key]: value,
+    }));
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-surface/70 px-3 py-4 backdrop-blur-sm md:items-center md:px-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={`${mode}-device-dialog-title`}
+    >
+      <form
+        className="max-h-[92vh] w-full overflow-y-auto rounded-lg bg-surface-container-high p-5 shadow-2xl md:max-w-2xl md:p-6"
+        onSubmit={onSubmit}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-on-surface-variant">{mode === "create" ? "New meter" : devEui}</p>
+            <h3 id={`${mode}-device-dialog-title`} className="mt-1 text-2xl font-bold">{title}</h3>
+          </div>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-highest px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary"
-            onClick={() => setShowCreateDevice((previous) => !previous)}
+            className="rounded-full bg-surface-container-highest px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant"
+            onClick={onClose}
+            disabled={submitting}
           >
-            <UIIcon name={showCreateDevice ? "expand_less" : "add_box"} className="text-[14px]" />
-            {showCreateDevice ? "Hide form" : "Open form"}
+            Close
           </button>
         </div>
 
-        {showCreateDevice ? (
-          <form className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleCreateDevice}>
+        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {mode === "create" && "devEui" in form ? (
             <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                devEui
-              </span>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">devEui</span>
               <input
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 font-mono text-sm outline-none transition focus:border-primary"
+                className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 font-mono text-sm outline-none transition focus:border-primary"
                 placeholder="a840410000000000"
-                value={createForm.devEui}
-                onChange={(event) =>
-                  setCreateForm((previous) => ({
-                    ...previous,
-                    devEui: event.target.value,
-                  }))
-                }
+                value={form.devEui}
+                onChange={(event) => setForm((previous) => ({ ...previous, devEui: event.target.value }))}
                 required
               />
             </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Device Name
-              </span>
-              <input
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                placeholder="Main Chiller Plant"
-                value={createForm.name}
-                onChange={(event) =>
-                  setCreateForm((previous) => ({
-                    ...previous,
-                    name: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Utility Type
-              </span>
-              <select
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                value={createForm.utilityType}
-                onChange={(event) =>
-                  setCreateForm((previous) => {
-                    const nextUtilityType = event.target.value as typeof previous.utilityType;
-                    const previousDefaultUnit = defaultUnitLabelForUtilityType(previous.utilityType);
-                    const nextDefaultUnit = defaultUnitLabelForUtilityType(nextUtilityType);
-
-                    return {
-                      ...previous,
-                      utilityType: nextUtilityType,
-                      unitLabel: previous.unitLabel === previousDefaultUnit ? nextDefaultUnit : previous.unitLabel,
-                    };
-                  })
-                }
-              >
-                {UTILITY_TYPES.map((utilityType) => (
-                  <option key={`create-utility-${utilityType}`} value={utilityType}>
-                    {utilityTypeLabel(utilityType)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Tariff (USD/{createForm.unitLabel || "unit"})
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="0.0001"
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                value={createForm.tariffPerUnit}
-                onChange={(event) =>
-                  setCreateForm((previous) => ({
-                    ...previous,
-                    tariffPerUnit: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Unit Label
-              </span>
-              <input
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                value={createForm.unitLabel}
-                onChange={(event) =>
-                  setCreateForm((previous) => ({
-                    ...previous,
-                    unitLabel: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Latitude (optional)
-              </span>
-              <input
-                type="number"
-                min="-90"
-                max="90"
-                step="0.000001"
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                placeholder="44.4268"
-                value={createForm.latitude}
-                onChange={(event) =>
-                  setCreateForm((previous) => ({
-                    ...previous,
-                    latitude: event.target.value,
-                  }))
-                }
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Longitude (optional)
-              </span>
-              <input
-                type="number"
-                min="-180"
-                max="180"
-                step="0.000001"
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                placeholder="26.1025"
-                value={createForm.longitude}
-                onChange={(event) =>
-                  setCreateForm((previous) => ({
-                    ...previous,
-                    longitude: event.target.value,
-                  }))
-                }
-              />
-            </label>
-
-            <label className="flex items-center gap-2 rounded-lg bg-surface-container-low px-4 py-3 text-sm">
-              <input
-                type="checkbox"
-                checked={createForm.isActive}
-                onChange={(event) =>
-                  setCreateForm((previous) => ({
-                    ...previous,
-                    isActive: event.target.checked,
-                  }))
-                }
-              />
-              Mark device as active
-            </label>
-
-            <div className="md:col-span-2">
-              {createError ? <p className="mb-3 text-sm text-error">{createError}</p> : null}
-
-              <button
-                type="submit"
-                className="primary-gradient-bg inline-flex items-center gap-1.5 rounded-full px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={createSubmitting}
-              >
-                <UIIcon name="add" className="text-[16px]" />
-                {createSubmitting ? "Creating..." : "Create Device"}
-              </button>
-            </div>
-          </form>
-        ) : null}
-      </section>
-
-      <section className="rounded-xl bg-surface-container-high p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-xl font-bold">Edit Device</h3>
-          {editingDevEui ? (
-            <p className="font-mono text-xs uppercase tracking-[0.08em] text-on-surface-variant">
-              {editingDevEui}
-            </p>
           ) : null}
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Device Name</span>
+            <input
+              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+              placeholder="Main Chiller Plant"
+              value={form.name}
+              onChange={(event) => setField("name", event.target.value as TForm["name"])}
+              required
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Utility Type</span>
+            <select
+              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+              value={form.utilityType}
+              onChange={(event) =>
+                setForm((previous) => {
+                  const nextUtilityType = event.target.value as typeof previous.utilityType;
+                  const previousDefaultUnit = defaultUnitLabelForUtilityType(previous.utilityType);
+                  const nextDefaultUnit = defaultUnitLabelForUtilityType(nextUtilityType);
+
+                  return {
+                    ...previous,
+                    utilityType: nextUtilityType,
+                    unitLabel: previous.unitLabel === previousDefaultUnit ? nextDefaultUnit : previous.unitLabel,
+                  };
+                })
+              }
+            >
+              {UTILITY_TYPES.map((utilityType) => (
+                <option key={`${mode}-utility-${utilityType}`} value={utilityType}>
+                  {utilityTypeLabel(utilityType)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+              Tariff (USD/{form.unitLabel || "unit"})
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.0001"
+              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+              value={form.tariffPerUnit}
+              onChange={(event) => setField("tariffPerUnit", event.target.value as TForm["tariffPerUnit"])}
+              required
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Unit Label</span>
+            <input
+              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+              value={form.unitLabel}
+              onChange={(event) => setField("unitLabel", event.target.value as TForm["unitLabel"])}
+              required
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Latitude</span>
+            <input
+              type="number"
+              min="-90"
+              max="90"
+              step="0.000001"
+              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+              placeholder="44.4268"
+              value={form.latitude}
+              onChange={(event) => setField("latitude", event.target.value as TForm["latitude"])}
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Longitude</span>
+            <input
+              type="number"
+              min="-180"
+              max="180"
+              step="0.000001"
+              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+              placeholder="26.1025"
+              value={form.longitude}
+              onChange={(event) => setField("longitude", event.target.value as TForm["longitude"])}
+            />
+          </label>
+
+          <label className="flex items-center gap-2 rounded-lg bg-surface-container-low px-4 py-3 text-sm">
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(event) => setField("isActive", event.target.checked as TForm["isActive"])}
+            />
+            Mark device as active
+          </label>
         </div>
 
-        {!editingDevEui ? (
-          <p className="mt-4 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-            Choose a device and click Edit in the table to update metadata or coordinates.
-          </p>
-        ) : (
-          <form className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleEditDevice}>
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Device Name
-              </span>
-              <input
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                value={editForm.name}
-                onChange={(event) =>
-                  setEditForm((previous) => ({
-                    ...previous,
-                    name: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
+        {error ? <p className="mt-4 text-sm text-error">{error}</p> : null}
 
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Utility Type
-              </span>
-              <select
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                value={editForm.utilityType}
-                onChange={(event) =>
-                  setEditForm((previous) => {
-                    const nextUtilityType = event.target.value as typeof previous.utilityType;
-                    const previousDefaultUnit = defaultUnitLabelForUtilityType(previous.utilityType);
-                    const nextDefaultUnit = defaultUnitLabelForUtilityType(nextUtilityType);
-
-                    return {
-                      ...previous,
-                      utilityType: nextUtilityType,
-                      unitLabel: previous.unitLabel === previousDefaultUnit ? nextDefaultUnit : previous.unitLabel,
-                    };
-                  })
-                }
-              >
-                {UTILITY_TYPES.map((utilityType) => (
-                  <option key={`edit-utility-${utilityType}`} value={utilityType}>
-                    {utilityTypeLabel(utilityType)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Tariff (USD/{editForm.unitLabel || "unit"})
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="0.0001"
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                value={editForm.tariffPerUnit}
-                onChange={(event) =>
-                  setEditForm((previous) => ({
-                    ...previous,
-                    tariffPerUnit: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Unit Label
-              </span>
-              <input
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                value={editForm.unitLabel}
-                onChange={(event) =>
-                  setEditForm((previous) => ({
-                    ...previous,
-                    unitLabel: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Latitude (optional)
-              </span>
-              <input
-                type="number"
-                min="-90"
-                max="90"
-                step="0.000001"
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                value={editForm.latitude}
-                onChange={(event) =>
-                  setEditForm((previous) => ({
-                    ...previous,
-                    latitude: event.target.value,
-                  }))
-                }
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                Longitude (optional)
-              </span>
-              <input
-                type="number"
-                min="-180"
-                max="180"
-                step="0.000001"
-                className="w-full rounded-t-lg border-b-2 border-outline-variant/35 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-                value={editForm.longitude}
-                onChange={(event) =>
-                  setEditForm((previous) => ({
-                    ...previous,
-                    longitude: event.target.value,
-                  }))
-                }
-              />
-            </label>
-
-            <label className="flex items-center gap-2 rounded-lg bg-surface-container-low px-4 py-3 text-sm">
-              <input
-                type="checkbox"
-                checked={editForm.isActive}
-                onChange={(event) =>
-                  setEditForm((previous) => ({
-                    ...previous,
-                    isActive: event.target.checked,
-                  }))
-                }
-              />
-              Mark device as active
-            </label>
-
-            <div className="md:col-span-2">
-              {editError ? <p className="mb-3 text-sm text-error">{editError}</p> : null}
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="submit"
-                  className="primary-gradient-bg inline-flex items-center gap-1.5 rounded-full px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={editSubmitting}
-                >
-                  <UIIcon name="edit" className="text-[16px]" />
-                  {editSubmitting ? "Saving..." : "Save Changes"}
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-highest px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-60"
-                  onClick={handleCancelEditDevice}
-                  disabled={editSubmitting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </form>
-        )}
-      </section>
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <button
+            type="submit"
+            className="primary-gradient-bg inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={submitting}
+          >
+            <UIIcon name={mode === "create" ? "add" : "edit"} className="text-[16px]" />
+            {submitting ? (mode === "create" ? "Creating..." : "Saving...") : mode === "create" ? "Create Device" : "Save Changes"}
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-full bg-surface-container-highest px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -863,23 +1004,37 @@ export function DevicesView({ controller }: ViewProps) {
 function HomeMapPanel({ controller }: ViewProps) {
   const {
     devices,
-    devicesWithCoordinates,
+    deviceRows,
     devicesLoading,
     selectedDevEui,
     handleSelectDevice,
     setShowCreateDevice,
     setActiveViewWithRoute,
   } = controller;
+  const [utilityFilter, setUtilityFilter] = useState<MapUtilityFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
 
-  const selectedMappedDevice =
-    devicesWithCoordinates.find((device) => device.devEui === selectedDevEui) ?? null;
+  const mapRows = useMemo(
+    () =>
+      deviceRows.filter((row) => {
+        const hasCoordinates = typeof row.device.latitude === "number" && typeof row.device.longitude === "number";
+        const matchesUtility = utilityFilter === "all" || row.device.utilityType === utilityFilter;
+        const matchesStatus = statusFilter === "all" || row.status === statusFilter;
+        return hasCoordinates && matchesUtility && matchesStatus;
+      }),
+    [deviceRows, statusFilter, utilityFilter],
+  );
+  const mapDevices = mapRows.map((row) => row.device as typeof row.device & { latitude: number; longitude: number });
+  const selectedMappedDevice = mapDevices.find((device) => device.devEui === selectedDevEui) ?? null;
+  const groupedByUtility = UTILITY_TYPES.map((utilityType) => ({
+    utilityType,
+    rows: mapRows.filter((row) => row.device.utilityType === utilityType),
+  })).filter((group) => group.rows.length > 0);
 
   if (devicesLoading && devices.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl bg-surface-container p-4 text-sm text-on-surface-variant">
-          Loading device locations...
-        </div>
+        <Panel className="text-sm text-on-surface-variant">Loading device locations...</Panel>
         <MapCanvasSkeleton />
       </div>
     );
@@ -887,7 +1042,7 @@ function HomeMapPanel({ controller }: ViewProps) {
 
   if (devices.length === 0) {
     return (
-      <div className="rounded-xl bg-surface-container-high p-8 text-sm text-on-surface-variant">
+      <Panel className="text-sm text-on-surface-variant">
         <p>No devices registered yet. Add at least one device before using the map.</p>
         <button
           type="button"
@@ -900,46 +1055,79 @@ function HomeMapPanel({ controller }: ViewProps) {
           <UIIcon name="add" className="text-[14px]" />
           Add Device
         </button>
-      </div>
-    );
-  }
-
-  if (devicesWithCoordinates.length === 0) {
-    return (
-      <div className="rounded-xl bg-surface-container-high p-8 text-sm text-on-surface-variant">
-        <p>No devices have coordinates yet. Add latitude/longitude in the Devices tab to place markers.</p>
-        <button
-          type="button"
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface-container-highest px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
-          onClick={() => setActiveViewWithRoute("devices")}
-        >
-          <UIIcon name="edit" className="text-[14px]" />
-          Open Devices
-        </button>
-      </div>
+      </Panel>
     );
   }
 
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-      <section className="rounded-xl bg-surface-container-high p-4 xl:col-span-8">
-        <DeviceMapCanvas
-          devices={devicesWithCoordinates}
-          selectedDevEui={selectedDevEui}
-          onSelectDevice={(devEui) => handleSelectDevice(devEui, "overview")}
-          defaultCenter={[45.9432, 24.9668]}
-          defaultZoom={6}
-        />
-      </section>
+      <Panel className="xl:col-span-9">
+        {mapDevices.length > 0 ? (
+          <DeviceMapCanvas
+            devices={mapDevices}
+            selectedDevEui={selectedDevEui}
+            onSelectDevice={(devEui) => handleSelectDevice(devEui, "overview")}
+            defaultCenter={[47.646, 23.548]}
+            defaultZoom={14}
+          />
+        ) : (
+          <div className="flex h-[600px] min-h-[560px] items-center justify-center rounded-lg bg-surface-container-low px-6 text-center text-sm text-on-surface-variant xl:h-[700px]">
+            No mapped devices match the selected filters.
+          </div>
+        )}
+      </Panel>
 
-      <aside className="space-y-4 rounded-xl bg-surface-container-high p-5 xl:col-span-4">
-        <h3 className="text-xl font-bold">Map Selection</h3>
+      <aside className="rounded-lg bg-surface-container-high p-5 xl:col-span-3">
+        <SectionHeader title="Map Selection" subtitle={`${mapDevices.length} mapped device(s)`} eyebrow="Location" />
+
+        <div className="mt-5 space-y-3">
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Utility</p>
+            <div className="flex flex-wrap gap-2">
+              {(["all", ...UTILITY_TYPES] as const).map((utilityType) => {
+                const isSelected = utilityFilter === utilityType;
+                return (
+                  <button
+                    type="button"
+                    key={`map-utility-${utilityType}`}
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.08em] ${
+                      isSelected ? "bg-primary text-[#1a1766]" : "bg-surface-container-low text-on-surface-variant"
+                    }`}
+                    onClick={() => setUtilityFilter(utilityType)}
+                  >
+                    {utilityType === "all" ? "All" : utilityTypeLabel(utilityType)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Status</p>
+            <div className="flex flex-wrap gap-2">
+              {STATUS_FILTERS.map((status) => (
+                <button
+                  type="button"
+                  key={`map-status-${status}`}
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.08em] ${
+                    statusFilter === status ? "bg-primary text-[#1a1766]" : "bg-surface-container-low text-on-surface-variant"
+                  }`}
+                  onClick={() => setStatusFilter(status)}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {selectedMappedDevice ? (
-          <article className="rounded-lg bg-surface-container-low p-4">
+          <article className="mt-5 rounded-lg bg-surface-container-low p-4">
             <p className="text-sm font-semibold">{selectedMappedDevice.name}</p>
             <p className="mt-1 font-mono text-xs text-on-surface-variant">{selectedMappedDevice.devEui}</p>
-            <p className="mt-1 text-xs text-on-surface-variant">{utilityTypeLabel(selectedMappedDevice.utilityType)}</p>
+            <div className="mt-2">
+              <UtilityChip utilityType={selectedMappedDevice.utilityType} />
+            </div>
             <p className="mt-3 font-mono text-xs text-on-surface-variant">
               {selectedMappedDevice.latitude.toFixed(5)}, {selectedMappedDevice.longitude.toFixed(5)}
             </p>
@@ -952,36 +1140,41 @@ function HomeMapPanel({ controller }: ViewProps) {
               Open Meter
             </button>
           </article>
-        ) : (
-          <p className="rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-            Select a marker to inspect a device location.
-          </p>
-        )}
+        ) : null}
 
-        <div className="space-y-2">
-          {devicesWithCoordinates.map((device) => {
-            const isSelected = device.devEui === selectedDevEui;
-            return (
-              <button
-                key={`map-list-${device.id}`}
-                type="button"
-                className={`w-full rounded-lg px-4 py-3 text-left transition ${
-                  isSelected
-                    ? "bg-primary text-[#1a1766]"
-                    : "bg-surface-container-low text-on-surface hover:bg-surface-container-highest"
-                }`}
-                onClick={() => handleSelectDevice(device.devEui, "overview")}
-              >
-                <p className="text-sm font-semibold">{device.name}</p>
-                <p className={`mt-1 text-xs ${isSelected ? "text-[#1a1766]/80" : "text-on-surface-variant"}`}>
-                  {utilityTypeLabel(device.utilityType)}
-                </p>
-                <p className={`mt-1 font-mono text-xs ${isSelected ? "text-[#1a1766]/80" : "text-on-surface-variant"}`}>
-                  {device.latitude.toFixed(4)}, {device.longitude.toFixed(4)}
-                </p>
-              </button>
-            );
-          })}
+        <div className="mt-5 max-h-[520px] space-y-4 overflow-y-auto pr-1 xl:max-h-[610px]">
+          {groupedByUtility.map((group) => (
+            <div key={`map-group-${group.utilityType}`}>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+                {utilityTypeLabel(group.utilityType)} ({group.rows.length})
+              </p>
+              <div className="space-y-2">
+                {group.rows.map((row) => {
+                  const isSelected = row.device.devEui === selectedDevEui;
+                  return (
+                    <button
+                      key={`map-list-${row.device.id}`}
+                      type="button"
+                      className={`w-full rounded-lg px-4 py-3 text-left transition ${
+                        isSelected
+                          ? "bg-primary text-[#1a1766]"
+                          : "bg-surface-container-low text-on-surface hover:bg-surface-container-highest"
+                      }`}
+                      onClick={() => handleSelectDevice(row.device.devEui, "overview")}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold">{row.device.name}</p>
+                        <StatusChip status={row.status} />
+                      </div>
+                      <p className={`mt-1 font-mono text-xs ${isSelected ? "text-[#1a1766]/80" : "text-on-surface-variant"}`}>
+                        {row.device.latitude?.toFixed(4)}, {row.device.longitude?.toFixed(4)}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </aside>
     </div>
@@ -990,115 +1183,100 @@ function HomeMapPanel({ controller }: ViewProps) {
 
 export function MeterView({ controller }: ViewProps) {
   const {
+    devices,
     selectedDevice,
     selectedDeviceRow,
     selectedDataError,
-    currentLoadWatts,
-    currentLoadKw,
-    currentConsumption,
     selectedLatest,
     streamStatus,
     lastHeartbeatAt,
     selectedCosts,
-    chartPaths,
-    chartLabels,
+    selectedReadings,
+    currentLoadWatts,
+    currentLoadKw,
+    currentConsumption,
+    handleSelectDevice,
   } = controller;
+  const meterSeries = useMemo(() => toMeterSeries(selectedReadings), [selectedReadings]);
 
   if (!selectedDevice) {
-    return (
-      <div className="rounded-xl bg-surface-container-high p-8 text-sm text-on-surface-variant">
-        Select or register a device to open meter details.
-      </div>
-    );
+    return <Panel className="text-sm text-on-surface-variant">Select or register a device to open meter details.</Panel>;
   }
 
-  return (
-    <div className="space-y-8">
-      <section className="rounded-xl bg-surface-container-high p-5 md:p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-on-surface-variant">Device | {selectedDevice.devEui}</p>
-            <h2 className="mt-1 text-3xl font-bold tracking-tight">{selectedDevice.name}</h2>
-            <p className="mt-1 text-sm text-on-surface-variant">
-              {utilityTypeLabel(selectedDevice.utilityType)} | {formatCurrency(selectedDevice.tariffPerUnit)} / {selectedDevice.unitLabel}
-            </p>
-          </div>
-          <span
-            className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] ${statusClasses(
-              selectedDeviceRow?.status ?? "heartbeat",
-            )}`}
-          >
-            {statusLabel(selectedDeviceRow?.status ?? "heartbeat")}
-          </span>
-        </div>
-      </section>
+  const gaugeProgress = clamp((currentLoadWatts ?? 0) / 6000, 0, 1);
 
-      {selectedDataError ? (
-        <div className="rounded-xl bg-error/10 p-4 text-sm text-error">{selectedDataError}</div>
-      ) : null}
+  return (
+    <div className="space-y-6">
+      <Panel>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <SectionHeader
+            eyebrow={`Device | ${selectedDevice.devEui}`}
+            title={selectedDevice.name}
+            subtitle={`${utilityTypeLabel(selectedDevice.utilityType)} | ${formatCurrency(selectedDevice.tariffPerUnit)} / ${selectedDevice.unitLabel}`}
+          />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <select
+              className="min-h-11 rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-3 text-sm outline-none transition focus:border-primary"
+              value={selectedDevice.devEui}
+              onChange={(event) => handleSelectDevice(event.target.value, "meter")}
+            >
+              {devices.map((device) => (
+                <option key={`meter-switch-${device.devEui}`} value={device.devEui}>
+                  {device.name}
+                </option>
+              ))}
+            </select>
+            <StatusChip status={selectedDeviceRow?.status ?? "heartbeat"} />
+          </div>
+        </div>
+      </Panel>
+
+      {selectedDataError ? <Panel className="bg-error/10 text-sm text-error">{selectedDataError}</Panel> : null}
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-        <article className="rounded-xl bg-surface-container-high p-6 xl:col-span-4">
-          <h3 className="text-xl font-bold">Live Readings</h3>
+        <Panel className="xl:col-span-4">
+          <SectionHeader title="Live Readings" eyebrow="Current meter state" />
 
-          <div className="mt-5 rounded-xl bg-surface-container-low p-5">
-            <div className="relative mx-auto h-40 w-56 overflow-hidden">
-              <svg className="absolute inset-0 h-full w-full" viewBox="0 0 220 140">
-                <path d="M20 120 A90 90 0 0 1 200 120" stroke="#2d3449" strokeWidth="18" fill="none" strokeLinecap="round" />
+          <div className="mt-5 rounded-lg bg-surface-container-low p-5">
+            <div className="relative mx-auto h-44 w-60 overflow-hidden">
+              <svg className="absolute inset-0 h-full w-full" viewBox="0 0 220 150">
+                <path d="M20 125 A90 90 0 0 1 200 125" stroke="#2d3449" strokeWidth="18" fill="none" strokeLinecap="round" />
                 <path
-                  d="M20 120 A90 90 0 0 1 200 120"
-                  stroke="#c0c1ff"
+                  d="M20 125 A90 90 0 0 1 200 125"
+                  stroke={utilityColor(selectedDevice.utilityType)}
                   strokeWidth="18"
                   fill="none"
                   strokeLinecap="round"
-                  strokeDasharray="340"
-                  strokeDashoffset={340 - 340 * clamp((currentLoadWatts ?? 0) / 6000, 0, 1)}
+                  strokeDasharray="283"
+                  strokeDashoffset={283 - 283 * gaugeProgress}
                 />
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-end pb-6">
+              <div className="absolute inset-0 flex flex-col items-center justify-end pb-8">
                 <p className="text-4xl font-black tracking-tight">{currentLoadKw !== null ? currentLoadKw.toFixed(2) : "--"}</p>
                 <p className="text-xs uppercase tracking-[0.12em] text-on-surface-variant">kW load</p>
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-lg bg-surface-container px-4 py-3">
-                <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">Consumption</p>
-                <p className="mt-1 text-2xl font-bold">
-                  {formatQuantity(currentConsumption)}
-                  <span className="ml-1 text-sm font-medium text-on-surface-variant">{selectedDevice.unitLabel}</span>
-                </p>
-              </div>
-              <div className="rounded-lg bg-surface-container px-4 py-3">
-                <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">Voltage</p>
-                <p className="mt-1 text-2xl font-bold">
-                  {selectedLatest?.voltage?.toFixed(1) ?? "--"}
-                  <span className="ml-1 text-sm font-medium text-on-surface-variant">V</span>
-                </p>
-              </div>
-              <div className="rounded-lg bg-surface-container px-4 py-3">
-                <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">Current</p>
-                <p className="mt-1 text-2xl font-bold">
-                  {selectedLatest?.current?.toFixed(1) ?? "--"}
-                  <span className="ml-1 text-sm font-medium text-on-surface-variant">A</span>
-                </p>
-              </div>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <ReadingTile label="Consumption" value={formatQuantity(currentConsumption)} unit={selectedDevice.unitLabel} />
+              <ReadingTile label="Voltage" value={selectedLatest?.voltage?.toFixed(1) ?? "--"} unit="V" />
+              <ReadingTile label="Current" value={selectedLatest?.current?.toFixed(1) ?? "--"} unit="A" />
             </div>
           </div>
-        </article>
+        </Panel>
 
         <div className="space-y-6 xl:col-span-8">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <article className="rounded-xl bg-surface-container-high p-6 md:col-span-1">
+            <Panel className="md:col-span-1">
               <p className="inline-flex items-center gap-2 text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
                 <UIIcon name="wifi_tethering" className="text-[15px]" />
                 Stream Health
               </p>
               <p className="mt-3 text-lg font-semibold text-tertiary">{streamStatus === "open" ? "Excellent" : streamStatus}</p>
               <p className="mt-1 text-sm text-on-surface-variant">Heartbeat: {lastHeartbeatAt ? formatRelativeTime(lastHeartbeatAt) : "--"}</p>
-            </article>
+            </Panel>
 
-            <article className="rounded-xl bg-surface-container-high p-6 md:col-span-2">
+            <Panel className="md:col-span-2">
               <div className="flex items-center justify-between gap-3">
                 <p className="inline-flex items-center gap-2 text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
                   <UIIcon name="payments" className="text-[15px]" />
@@ -1108,167 +1286,223 @@ export function MeterView({ controller }: ViewProps) {
                   type="button"
                   className="rounded-full bg-surface-container-highest p-2 text-on-surface-variant transition hover:text-primary"
                   title="Download report"
+                  aria-label="Download report"
                 >
                   <UIIcon name="download" className="text-[18px]" />
                 </button>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
-                <div>
-                  <p className="text-on-surface-variant">Today</p>
-                  <p className="mt-1 text-xl font-bold">{formatCurrency(selectedCosts.today?.estimatedCost)}</p>
-                  <p className="mt-0.5 text-xs text-on-surface-variant">
-                    {formatQuantity(selectedCosts.today?.consumedUnits)} {selectedDevice.unitLabel}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-on-surface-variant">This Week</p>
-                  <p className="mt-1 text-xl font-bold">{formatCurrency(selectedCosts.week?.estimatedCost)}</p>
-                  <p className="mt-0.5 text-xs text-on-surface-variant">
-                    {formatQuantity(selectedCosts.week?.consumedUnits)} {selectedDevice.unitLabel}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-on-surface-variant">This Month</p>
-                  <p className="mt-1 text-xl font-bold text-primary">{formatCurrency(selectedCosts.month?.estimatedCost)}</p>
-                  <p className="mt-0.5 text-xs text-on-surface-variant">
-                    {formatQuantity(selectedCosts.month?.consumedUnits)} {selectedDevice.unitLabel}
-                  </p>
-                </div>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <CostTile label="Today" cost={selectedCosts.today?.estimatedCost} units={selectedCosts.today?.consumedUnits} unitLabel={selectedDevice.unitLabel} />
+                <CostTile label="This Week" cost={selectedCosts.week?.estimatedCost} units={selectedCosts.week?.consumedUnits} unitLabel={selectedDevice.unitLabel} />
+                <CostTile label="This Month" cost={selectedCosts.month?.estimatedCost} units={selectedCosts.month?.consumedUnits} unitLabel={selectedDevice.unitLabel} highlight />
               </div>
-            </article>
+            </Panel>
           </div>
 
-          <article className="rounded-xl bg-surface-container-high p-6">
-            <h3 className="text-xl font-bold">24h Consumption Profile</h3>
-            {chartPaths.linePath ? (
-              <div className="mt-5 h-72 rounded-xl bg-surface-container-low p-4">
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
-                  <defs>
-                    <linearGradient id="meterFill" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#c0c1ff" stopOpacity="0.24" />
-                      <stop offset="100%" stopColor="#0b1326" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path d={chartPaths.areaPath} fill="url(#meterFill)" />
-                  <path
-                    d={chartPaths.linePath}
-                    fill="none"
-                    stroke="#c0c1ff"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="0.8"
-                  />
-                </svg>
-                <div className="mt-2 flex items-center justify-between text-xs text-on-surface-variant">
-                  {chartLabels.map((label, index) => (
-                    <span key={`${label}-meter-${index}`}>{label}</span>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-5 rounded-xl bg-surface-container-low p-6 text-sm text-on-surface-variant">
-                No profile data yet for this device.
-              </div>
-            )}
-          </article>
+          <Panel>
+            <SectionHeader title="Consumption Profile" subtitle="Recent consumption trend for the selected meter." eyebrow="30-day telemetry" />
+            <div className="mt-5 rounded-lg bg-surface-container-low p-3">
+              <MeterAreaChart data={meterSeries} unitLabel={selectedDevice.unitLabel} />
+            </div>
+          </Panel>
         </div>
       </section>
+    </div>
+  );
+}
+
+function ReadingTile({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <div className="rounded-lg bg-surface-container px-4 py-3">
+      <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">{label}</p>
+      <p className="mt-1 inline-flex items-baseline gap-1 text-2xl font-bold">
+        <span>{value}</span>
+        <span className="text-sm font-medium text-on-surface-variant">{unit}</span>
+      </p>
+    </div>
+  );
+}
+
+function CostTile({
+  label,
+  cost,
+  units,
+  unitLabel,
+  highlight = false,
+}: {
+  label: string;
+  cost: number | null | undefined;
+  units: number | null | undefined;
+  unitLabel: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="rounded-lg bg-surface-container-low px-4 py-3">
+      <p className="text-sm text-on-surface-variant">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${highlight ? "text-primary" : ""}`}>{formatCurrency(cost)}</p>
+      <p className="mt-0.5 text-xs text-on-surface-variant">
+        <QuantityWithUnit value={units} unit={unitLabel} />
+      </p>
     </div>
   );
 }
 
 export function BillingView({ controller }: ViewProps) {
-  const {
-    selectedDevice,
-    selectedCosts,
-    selectedDataLoading,
-    deviceRows,
-  } = controller;
-  const selectedUnitLabel = selectedDevice?.unitLabel ?? selectedCosts.month?.unitLabel ?? "unit";
+  const { fleetSummary, selectedDataLoading, deviceRows } = controller;
+  const billingChartPoints = useMemo(() => toBillingChartPoints(deviceRows), [deviceRows]);
+  const topCostRows = useMemo(() => toDeviceCostRanking(deviceRows), [deviceRows]);
+  const [billingPage, setBillingPage] = useState(1);
+  const billingTotalPages = getTotalPages(deviceRows.length, BILLING_PAGE_SIZE);
+  const currentBillingPage = getCurrentPage(billingPage, billingTotalPages);
+  const paginatedBillingRows = useMemo(
+    () => getPageWindow(deviceRows, currentBillingPage, BILLING_PAGE_SIZE),
+    [currentBillingPage, deviceRows],
+  );
 
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <article className="rounded-xl bg-surface-container-high p-6">
-          <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">Today</p>
-          <p className="mt-3 text-4xl font-black tracking-tight">{formatCurrency(selectedCosts.today?.estimatedCost)}</p>
-          <p className="mt-2 text-xs uppercase tracking-[0.08em] text-on-surface-variant">
-            {formatQuantity(selectedCosts.today?.consumedUnits)} {selectedUnitLabel} consumed
-          </p>
-        </article>
-        <article className="rounded-xl bg-surface-container-high p-6">
-          <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">This Week</p>
-          <p className="mt-3 text-4xl font-black tracking-tight">{formatCurrency(selectedCosts.week?.estimatedCost)}</p>
-          <p className="mt-2 text-xs uppercase tracking-[0.08em] text-on-surface-variant">
-            {formatQuantity(selectedCosts.week?.consumedUnits)} {selectedUnitLabel} consumed
-          </p>
-        </article>
-        <article className="rounded-xl bg-surface-container-high p-6">
-          <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">This Month</p>
-          <p className="mt-3 text-4xl font-black tracking-tight text-primary">{formatCurrency(selectedCosts.month?.estimatedCost)}</p>
-          <p className="mt-2 text-xs uppercase tracking-[0.08em] text-on-surface-variant">
-            {formatQuantity(selectedCosts.month?.consumedUnits)} {selectedUnitLabel} consumed
-          </p>
-        </article>
+        <KpiCard
+          label="Today"
+          value={formatCurrency(fleetSummary?.totals.todayEstimatedCost)}
+          detail="Fleet estimated cost"
+          icon="payments"
+        />
+        <KpiCard
+          label="This Week"
+          value={formatCurrency(fleetSummary?.totals.weekEstimatedCost)}
+          detail="Rolling seven-day estimate"
+          icon="insights"
+        />
+        <KpiCard
+          label="This Month"
+          value={formatCurrency(fleetSummary?.totals.monthEstimatedCost)}
+          detail={`${fleetSummary?.totals.activeDeviceCount ?? 0} active devices`}
+          icon="attach_money"
+        />
       </section>
 
-      {selectedDataLoading ? (
-        <div className="rounded-xl bg-surface-container p-4 text-sm text-on-surface-variant">
-          Refreshing billing and telemetry summaries...
-        </div>
-      ) : null}
+      {selectedDataLoading ? <Panel className="text-sm text-on-surface-variant">Refreshing billing and telemetry summaries...</Panel> : null}
 
-      <section className="rounded-xl bg-surface-container-high p-6">
-        <h3 className="text-xl font-bold">Fleet Billing Projection</h3>
-        <p className="mt-1 text-sm text-on-surface-variant">
-          Instant estimate using latest cumulative consumption and configured tariff per unit.
-        </p>
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <Panel className="xl:col-span-8">
+          <SectionHeader title="Cost By Utility" subtitle="Estimated cumulative cost from the latest readings." eyebrow="Fleet billing" />
+          <div className="mt-5">
+            <BillingUtilityChart data={billingChartPoints} />
+          </div>
+        </Panel>
 
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[840px] text-left">
-            <thead>
-              <tr className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
-                <th className="pb-3 pr-4">Device</th>
-                <th className="pb-3 pr-4">Utility</th>
-                <th className="pb-3 pr-4">Tariff</th>
-                <th className="pb-3 pr-4">Latest Consumption</th>
-                <th className="pb-3 pr-4">Est. Cumulative Cost</th>
-                <th className="pb-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {deviceRows.map((row) => {
-                const cumulativeCost =
-                  row.latestConsumption !== null ? row.latestConsumption * row.device.tariffPerUnit : null;
-
-                return (
-                  <tr key={`billing-${row.device.id}`} className="border-t border-outline-variant/20 text-sm">
-                    <td className="py-4 pr-4 font-semibold">{row.device.name}</td>
-                    <td className="py-4 pr-4 text-on-surface-variant">{utilityTypeLabel(row.device.utilityType)}</td>
-                    <td className="py-4 pr-4 font-mono">
-                      {formatCurrency(row.device.tariffPerUnit)} / {row.device.unitLabel}
-                    </td>
-                    <td className="py-4 pr-4 font-mono">
-                      {formatQuantity(row.latestConsumption)} {row.device.unitLabel}
-                    </td>
-                    <td className="py-4 pr-4 font-mono">{formatCurrency(cumulativeCost)}</td>
-                    <td className="py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.08em] ${statusClasses(
-                          row.status,
-                        )}`}
-                      >
-                        {statusLabel(row.status)}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <Panel className="xl:col-span-4">
+          <SectionHeader title="Top Cost Drivers" subtitle="Highest estimated cumulative costs." eyebrow="Ranking" />
+          <div className="mt-5 space-y-3">
+            {topCostRows.map((row, index) => (
+              <article key={`cost-driver-${row.device.id}`} className="rounded-lg bg-surface-container-low px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {index + 1}. {row.device.name}
+                    </p>
+                    <div className="mt-2">
+                      <UtilityChip utilityType={row.device.utilityType} />
+                    </div>
+                  </div>
+                  <p className="font-mono text-sm font-bold">{formatCurrency(row.estimatedCost)}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </Panel>
       </section>
+
+      <Panel>
+        <SectionHeader
+          title="Fleet Billing Projection"
+          subtitle="Instant estimate using latest cumulative consumption and configured tariff per unit."
+          eyebrow={`${deviceRows.length} devices`}
+        />
+
+        <div className="mt-5 overflow-hidden rounded-lg border border-outline-variant/20">
+          <div className="hidden md:block">
+            <table className="w-full text-left">
+              <thead className="bg-surface-container-low text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
+                <tr>
+                  <th className="px-4 py-3">Device</th>
+                  <th className="px-4 py-3">Utility</th>
+                  <th className="px-4 py-3">Tariff</th>
+                  <th className="px-4 py-3">Latest Consumption</th>
+                  <th className="px-4 py-3">Est. Cost</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedBillingRows.map((row) => {
+                  const cumulativeCost =
+                    row.latestConsumption !== null ? row.latestConsumption * row.device.tariffPerUnit : null;
+
+                  return (
+                    <tr key={`billing-${row.device.id}`} className="border-t border-outline-variant/15 text-sm hover:bg-surface-container-low">
+                      <td className="px-4 py-3 font-semibold">{row.device.name}</td>
+                      <td className="px-4 py-3">
+                        <UtilityChip utilityType={row.device.utilityType} />
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-on-surface-variant">
+                        {formatCurrency(row.device.tariffPerUnit)} / {row.device.unitLabel}
+                      </td>
+                      <td className="px-4 py-3">
+                        <QuantityWithUnit value={row.latestConsumption} unit={row.device.unitLabel} />
+                      </td>
+                      <td className="px-4 py-3 font-mono">{formatCurrency(cumulativeCost)}</td>
+                      <td className="px-4 py-3">
+                        <StatusChip status={row.status} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 p-3 md:hidden">
+            {paginatedBillingRows.map((row) => {
+              const cumulativeCost =
+                row.latestConsumption !== null ? row.latestConsumption * row.device.tariffPerUnit : null;
+              return (
+                <article key={`billing-mobile-${row.device.id}`} className="rounded-lg bg-surface-container-low p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">{row.device.name}</p>
+                      <div className="mt-2">
+                        <UtilityChip utilityType={row.device.utilityType} />
+                      </div>
+                    </div>
+                    <StatusChip status={row.status} />
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">Usage</p>
+                      <p className="mt-1">
+                        <QuantityWithUnit value={row.latestConsumption} unit={row.device.unitLabel} />
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">Cost</p>
+                      <p className="mt-1 font-mono font-semibold">{formatCurrency(cumulativeCost)}</p>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+
+        <PaginationControls
+          page={currentBillingPage}
+          totalPages={billingTotalPages}
+          totalItems={deviceRows.length}
+          pageSize={BILLING_PAGE_SIZE}
+          onPageChange={setBillingPage}
+        />
+      </Panel>
     </div>
   );
 }
-

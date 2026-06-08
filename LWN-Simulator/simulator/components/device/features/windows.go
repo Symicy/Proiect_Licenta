@@ -59,6 +59,23 @@ func (w *Window) OpenWindow(Delay time.Duration, ReceivedDownlink *dl.ReceivedDo
 	}
 }
 
+func (w *Window) OpenWindowAll(Delay time.Duration, ReceivedDownlink *dl.ReceivedDownlink) []*lorawan.PHYPayload {
+
+	if Delay == 0 {
+		Delay = w.Delay
+	}
+
+	timerWindow := time.NewTimer(Delay)
+	<-timerWindow.C
+	timerWindow.Stop()
+
+	timer := time.NewTimer(w.DurationOpen)
+	<-timer.C
+	timer.Stop()
+
+	return ReceivedDownlink.PullAll()
+}
+
 //MarshalJSON of device's Receive window
 func (w *Window) MarshalJSON() ([]byte, error) {
 	type Alias Window

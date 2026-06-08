@@ -8,6 +8,8 @@ loadEnv({ path: new URL("../.env", import.meta.url) });
 const { Pool } = pg;
 
 const SIMULATOR_API_URL = (process.env.SIMULATOR_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
+const SIMULATOR_BRIDGE_ADDRESS = process.env.SIMULATOR_BRIDGE_ADDRESS ?? "chirpstack-gateway-bridge";
+const SIMULATOR_BRIDGE_PORT = process.env.SIMULATOR_BRIDGE_PORT ?? "1700";
 const APP_DATABASE_URL = process.env.DATABASE_URL;
 const CHIRPSTACK_DATABASE_URL =
   process.env.CHIRPSTACK_DATABASE_URL ??
@@ -19,6 +21,37 @@ const USER_CLAIM_CODES = [
   "USER1-DEMO-2026",
   "USER2-DEMO-2026",
   "USER3-DEMO-2026",
+];
+const DEFAULT_GATEWAY_MAC = "a1b2c3d4e5f67890";
+const DEFAULT_BASE_LATITUDE = 47.6462928;
+const DEFAULT_BASE_LONGITUDE = 23.5490119;
+const DEFAULT_LWN_RXS = [
+  {
+    channel: {
+      active: true,
+      enableUplink: true,
+      freqUplink: 868100000,
+      freqDownlink: 868100000,
+      minDR: 0,
+      maxDR: 5,
+    },
+    delay: 5000,
+    durationOpen: 3000,
+    dataRate: 5,
+  },
+  {
+    channel: {
+      active: true,
+      enableUplink: false,
+      freqUplink: 869525000,
+      freqDownlink: 869525000,
+      minDR: 0,
+      maxDR: 5,
+    },
+    delay: 5000,
+    durationOpen: 3000,
+    dataRate: 0,
+  },
 ];
 
 const DEMO_USERS = [
@@ -100,11 +133,140 @@ async function fetchSimulatorDevices() {
   }
 
   const devices = await response.json();
+  if (devices === null) {
+    return [];
+  }
   if (!Array.isArray(devices)) {
     throw new Error("LWN Simulator /api/devices did not return an array.");
   }
 
   return devices;
+}
+
+async function fetchSimulatorGateways() {
+  const response = await fetch(`${SIMULATOR_API_URL}/api/gateways`);
+  if (!response.ok) {
+    throw new Error(`LWN Simulator returned ${response.status} while listing gateways.`);
+  }
+
+  const gateways = await response.json();
+  if (gateways === null) {
+    return [];
+  }
+  if (!Array.isArray(gateways)) {
+    throw new Error("LWN Simulator /api/gateways did not return an array.");
+  }
+
+  return gateways;
+}
+
+async function ensureSimulatorBridgeAddress() {
+  const response = await fetch(`${SIMULATOR_API_URL}/api/bridge/save`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      ip: SIMULATOR_BRIDGE_ADDRESS,
+      port: SIMULATOR_BRIDGE_PORT,
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to configure LWN Simulator bridge address: ${response.status} ${text}`);
+  }
+}
+
+function buildDefaultGateway(id, latitude, longitude) {
+  return {
+    id,
+    info: {
+      active: true,
+      typeGateway: false,
+      name: "Gateway_Licenta",
+      macAddress: DEFAULT_GATEWAY_MAC,
+      location: {
+        latitude,
+        longitude,
+        altitude: 0,
+      },
+      keepAlive: 10,
+      ip: "",
+      port: "",
+    },
+    stat: {},
+  };
+}
+
+async function ensureSimulatorGateway(gateways, latitude, longitude) {
+  const hasGateway = gateways.some(
+    (gateway) => gateway?.info?.macAddress?.toLowerCase() === DEFAULT_GATEWAY_MAC,
+  );
+  if (hasGateway) {
+    return 0;
+  }
+
+  const nextGatewayId =
+    gateways.reduce((maxId, gateway) => Math.max(maxId, Number(gateway.id) || 0), 0) + 1;
+  const response = await fetch(`${SIMULATOR_API_URL}/api/add-gateway`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(buildDefaultGateway(nextGatewayId, latitude, longitude)),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to add default LWN Simulator gateway: ${response.status} ${text}`);
+  }
+
+  const result = await response.json();
+  if (result?.code !== 0) {
+    throw new Error(`LWN Simulator rejected default gateway: ${JSON.stringify(result)}`);
+  }
+
+  return 1;
+}
+
+function buildDefaultLwnTemplate(latitude, longitude) {
+  return {
+    info: {
+      status: {
+        mtype: "UnConfirmedDataUp",
+        payload: "",
+        active: true,
+        infoUplink: {
+          fport: 2,
+          fcnt: 0,
+        },
+        fcntDown: 0,
+        base64: true,
+      },
+      configuration: {
+        region: 1,
+        sendInterval: 10,
+        ackTimeout: 2,
+        range: 10000,
+        disableFCntDown: false,
+        supportedOtaa: true,
+        supportedADR: true,
+        supportedFragment: false,
+        supportedClassB: false,
+        supportedClassC: false,
+        dataRate: 5,
+        rx1DROffset: 0,
+        nbRetransmission: 1,
+      },
+      location: {
+        latitude,
+        longitude,
+        altitude: 0,
+      },
+      rxs: DEFAULT_LWN_RXS,
+    },
+  };
 }
 
 function buildLwnDevice({ id, template, device }) {
@@ -162,6 +324,11 @@ async function postSimulatorDevice(deviceBody) {
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Failed to add ${deviceBody.info.devEUI} to LWN Simulator: ${response.status} ${text}`);
+  }
+
+  const result = await response.json();
+  if (result?.code !== 0) {
+    throw new Error(`LWN Simulator rejected ${deviceBody.info.devEUI}: ${JSON.stringify(result)}`);
   }
 }
 
@@ -325,14 +492,19 @@ async function upsertChirpStackDevice(chirpStackPool, targets, device) {
         dev_eui, created_at, updated_at, nwk_key, app_key, dev_nonces, join_nonce, gen_app_key
       )
       VALUES (
-        decode($1, 'hex'), NOW(), NOW(), decode($2, 'hex'), decode($2, 'hex'), '[]'::jsonb, 0,
+        decode($1, 'hex'), NOW(), NOW(), decode($2, 'hex'), decode($2, 'hex'),
+        '{"0000000000000000":[]}'::jsonb, 0,
         decode('00000000000000000000000000000000', 'hex')
       )
       ON CONFLICT (dev_eui)
       DO UPDATE SET
         updated_at = NOW(),
         nwk_key = EXCLUDED.nwk_key,
-        app_key = EXCLUDED.app_key
+        app_key = EXCLUDED.app_key,
+        dev_nonces = CASE
+          WHEN jsonb_typeof(device_keys.dev_nonces) = 'array' THEN EXCLUDED.dev_nonces
+          ELSE device_keys.dev_nonces
+        END
     `,
     [device.devEui, device.appKey],
   );
@@ -396,10 +568,13 @@ async function main() {
 
   try {
     const simulatorDevices = await fetchSimulatorDevices();
-    const template = simulatorDevices[0];
+    const simulatorGateways = await fetchSimulatorGateways();
+    const template = simulatorDevices[0] ?? buildDefaultLwnTemplate(DEFAULT_BASE_LATITUDE, DEFAULT_BASE_LONGITUDE);
     const templateLocation = template?.info?.location ?? {};
-    const baseLatitude = Number(templateLocation.latitude ?? 47.64629280234782);
-    const baseLongitude = Number(templateLocation.longitude ?? 23.549011945724487);
+    const baseLatitude = Number(templateLocation.latitude ?? DEFAULT_BASE_LATITUDE);
+    const baseLongitude = Number(templateLocation.longitude ?? DEFAULT_BASE_LONGITUDE);
+    await ensureSimulatorBridgeAddress();
+    const gatewaysCreated = await ensureSimulatorGateway(simulatorGateways, baseLatitude, baseLongitude);
     const nextLwnId =
       simulatorDevices.reduce((maxId, device) => Math.max(maxId, Number(device.id) || 0), 0) + 1;
     const existingSimulatorDevEuis = new Set(
@@ -435,6 +610,7 @@ async function main() {
     }
 
     console.log(`Provisioned ${demoDevices.length} demo devices.`);
+    console.log(`Added ${gatewaysCreated} default gateway to LWN Simulator.`);
     console.log(`Added ${lwnCreated} new devices to LWN Simulator; existing generated devices were skipped.`);
     console.log("Demo accounts:");
     console.log(`- company.demo@example.com / ${DEMO_PASSWORD} / ${COMPANY_CLAIM_CODE}`);

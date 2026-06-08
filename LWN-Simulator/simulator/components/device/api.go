@@ -39,7 +39,6 @@ func (d *Device) Setup(Resources *res.Resources, forwarder *f.Forwarder) {
 
 	d.Info.Status.DataUplink.DwellTime = lorawan.DwellTime400ms
 	d.Info.Status.DataRate = d.Info.Configuration.DataRateInitial
-	d.Info.Status.IndexchannelActive = 0
 
 	d.Info.Status.Battery = util.ConnectedPowerSource
 
@@ -60,6 +59,10 @@ func (d *Device) Setup(Resources *res.Resources, forwarder *f.Forwarder) {
 	d.Info.ReceivedDownlink.Notify = sync.NewCond(&d.Info.ReceivedDownlink.Mutex)
 
 	d.Info.Configuration.Channels = d.Info.Configuration.Region.GetChannels()
+	d.Info.Status.IndexchannelActive = 0
+	if len(d.Info.Configuration.Channels) > 0 {
+		d.Info.Status.IndexchannelActive = uint16(int(d.Info.DevEUI[7]) % len(d.Info.Configuration.Channels))
+	}
 
 	d.Class = classes.GetClass(classes.ClassA)
 	d.Class.Setup(&d.Info)

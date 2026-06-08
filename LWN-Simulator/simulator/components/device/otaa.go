@@ -17,14 +17,14 @@ const (
 	JOINACCEPTDELAY2 = time.Duration(6 * time.Second)
 )
 
-func (d *Device) OtaaActivation() {
+func (d *Device) OtaaActivation() bool {
 
 	for !d.Info.Status.Joined {
 
 		d.Info.Status.Mode = util.Activation
 
 		if !d.CanExecute() { //stop simulator
-			return
+			return false
 		}
 
 		d.SwitchClass(classes.ClassA)
@@ -33,22 +33,31 @@ func (d *Device) OtaaActivation() {
 
 		d.Print("Open RXs", nil, util.PrintBoth)
 
-		phy := d.Class.ReceiveWindows(JOINACCEPTDELAY1, JOINACCEPTDELAY2)
-		if phy != nil {
+		receivedDownlink := false
+		ignoredDownlinks := 0
+		joinDelays := []time.Duration{JOINACCEPTDELAY1, JOINACCEPTDELAY2}
+		for windowIndex, joinDelay := range joinDelays {
+			for _, phy := range d.receiveJoinAcceptCandidates(windowIndex, joinDelay) {
+				receivedDownlink = true
+				d.Print("Downlink received", nil, util.PrintBoth)
 
-			d.Print("Downlink received", nil, util.PrintBoth)
+				_, err := d.ProcessDownlink(*phy)
+				if err == nil {
+					break
+				}
 
-			_, err := d.ProcessDownlink(*phy)
-			if err != nil {
-				d.Print("", err, util.PrintBoth)
-
-				timerAckTimeout := time.NewTimer(d.Info.Configuration.AckTimeout)
-				<-timerAckTimeout.C
-
-				d.Print("ACK Timeout", nil, util.PrintBoth)
+				ignoredDownlinks++
 			}
-		} else {
+
+			if d.Info.Status.Joined {
+				break
+			}
+		}
+
+		if !receivedDownlink {
 			d.Print("None downlink received", nil, util.PrintBoth)
+		} else if !d.Info.Status.Joined && ignoredDownlinks > 0 {
+			d.Print("Ignored invalid downlinks", nil, util.PrintBoth)
 		}
 
 		if d.Info.Status.Joined {
@@ -56,14 +65,45 @@ func (d *Device) OtaaActivation() {
 			d.Print("Joined", nil, util.PrintBoth)
 			d.Info.Status.Mode = util.Normal
 
-			return
+			return true
 		}
 
 		d.Print("Unjoined", nil, util.PrintBoth)
 
+		retryDelay := d.Info.Configuration.SendInterval
+		if retryDelay <= 0 {
+			retryDelay = 10 * time.Second
+		}
+		retryJitter := time.Duration(rand.Intn(3000)) * time.Millisecond
+		retryTimer := time.NewTimer(retryDelay + retryJitter)
+
+		select {
+		case <-retryTimer.C:
+		case <-d.Exit:
+			retryTimer.Stop()
+			d.Print("Turn OFF", nil, util.PrintBoth)
+			return false
+		}
+
 	}
 
-	return
+	return true
+}
+
+func (d *Device) receiveJoinAcceptCandidates(windowIndex int, delay time.Duration) []*lorawan.PHYPayload {
+
+	if windowIndex >= len(d.Info.RX) {
+		return nil
+	}
+
+	d.Info.Forwarder.Register(d.Info.RX[windowIndex].GetListeningFrequency(), d.Info.DevEUI, &d.Info.ReceivedDownlink)
+
+	downlinks := d.Info.RX[windowIndex].OpenWindowAll(delay, &d.Info.ReceivedDownlink)
+
+	d.Info.Forwarder.UnRegister(d.Info.RX[windowIndex].GetListeningFrequency(), d.Info.DevEUI)
+
+	return downlinks
+
 }
 
 func (d *Device) CreateJoinRequest() []byte {
