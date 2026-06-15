@@ -168,18 +168,40 @@ export async function getAggregatedReadingsByDevEui(params: {
   return sortedReadings(readings);
 }
 
-async function readSingleConsumptionValue(flux: string) {
+export async function getForecastTrainingReadingsByDevEui(params: {
+  devEui: string;
+  start: Date;
+  stop: Date;
+  stepHours: number;
+}) {
+  const limit = Math.ceil(
+    (params.stop.getTime() - params.start.getTime()) / (params.stepHours * 60 * 60 * 1000),
+  ) + 5;
+
+  return getAggregatedReadingsByDevEui({
+    devEui: params.devEui,
+    start: params.start,
+    stop: params.stop,
+    limit,
+    aggregateWindow: `${params.stepHours}h`,
+    aggregateFn: "last",
+  });
+}
+
+async function readSingleNumberValue(flux: string) {
   const { queryApi } = createQueryApi();
   const rows = await queryApi.collectRows<{ _value?: unknown }>(flux);
 
   const value = rows.length > 0 ? normalizeNumber(rows[0]?._value) : null;
-  return value ?? 0;
+  return value;
 }
 
-export async function getConsumptionSumByDevEui(params: {
+async function readFieldAggregateValue(params: {
   devEui: string;
   start: Date;
   stop: Date;
+  field: "consumption" | "energy";
+  aggregate: "sum" | "first" | "last";
 }) {
   const { bucket } = createQueryApi();
 
@@ -187,10 +209,45 @@ export async function getConsumptionSumByDevEui(params: {
   |> range(start: time(v: "${params.start.toISOString()}"), stop: time(v: "${params.stop.toISOString()}"))
   |> filter(fn: (r) => r._measurement == "meter_reading")
   |> filter(fn: (r) => r.devEui == "${escapeFluxString(params.devEui)}")
-  |> filter(fn: (r) => r._field == "consumption" or r._field == "energy")
-  |> sum()`;
+  |> filter(fn: (r) => r._field == "${params.field}")
+  |> group()
+  |> ${params.aggregate}()`;
 
-  return readSingleConsumptionValue(flux);
+  return readSingleNumberValue(flux);
+}
+
+async function readConsumptionFieldAggregateValue(params: {
+  devEui: string;
+  start: Date;
+  stop: Date;
+  aggregate: "sum" | "first" | "last";
+}) {
+  const consumptionValue = await readFieldAggregateValue({
+    ...params,
+    field: "consumption",
+  });
+
+  if (consumptionValue !== null) {
+    return consumptionValue;
+  }
+
+  return (
+    (await readFieldAggregateValue({
+      ...params,
+      field: "energy",
+    })) ?? 0
+  );
+}
+
+export async function getConsumptionSumByDevEui(params: {
+  devEui: string;
+  start: Date;
+  stop: Date;
+}) {
+  return readConsumptionFieldAggregateValue({
+    ...params,
+    aggregate: "sum",
+  });
 }
 
 export async function getConsumptionDeltaByDevEui(params: {
@@ -198,25 +255,15 @@ export async function getConsumptionDeltaByDevEui(params: {
   start: Date;
   stop: Date;
 }) {
-  const { bucket } = createQueryApi();
-
-  const firstFlux = `from(bucket: "${escapeFluxString(bucket)}")
-  |> range(start: time(v: "${params.start.toISOString()}"), stop: time(v: "${params.stop.toISOString()}"))
-  |> filter(fn: (r) => r._measurement == "meter_reading")
-  |> filter(fn: (r) => r.devEui == "${escapeFluxString(params.devEui)}")
-  |> filter(fn: (r) => r._field == "consumption" or r._field == "energy")
-  |> first()`;
-
-  const lastFlux = `from(bucket: "${escapeFluxString(bucket)}")
-  |> range(start: time(v: "${params.start.toISOString()}"), stop: time(v: "${params.stop.toISOString()}"))
-  |> filter(fn: (r) => r._measurement == "meter_reading")
-  |> filter(fn: (r) => r.devEui == "${escapeFluxString(params.devEui)}")
-  |> filter(fn: (r) => r._field == "consumption" or r._field == "energy")
-  |> last()`;
-
   const [firstValue, lastValue] = await Promise.all([
-    readSingleConsumptionValue(firstFlux),
-    readSingleConsumptionValue(lastFlux),
+    readConsumptionFieldAggregateValue({
+      ...params,
+      aggregate: "first",
+    }),
+    readConsumptionFieldAggregateValue({
+      ...params,
+      aggregate: "last",
+    }),
   ]);
 
   return {

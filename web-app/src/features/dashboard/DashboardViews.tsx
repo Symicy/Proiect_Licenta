@@ -7,18 +7,21 @@ import type { MeterReading } from "@/lib/services/influx.service";
 import {
   BillingUtilityChart,
   FleetCostDonut,
+  ForecastComparisonChart,
   MeterAreaChart,
   TopConsumersChart,
   UtilityConsumptionChart,
   type BillingChartPoint,
   type DeviceRankingPoint,
+  type ForecastSeriesPoint,
   type MeterSeriesPoint,
   type UtilityChartPoint,
   utilityColor,
 } from "./DashboardCharts";
 import { UIIcon } from "./DashboardUI";
 import type { DashboardController } from "./hooks/useDashboardController";
-import type { CreateDeviceFormState, DeviceRow, UpdateDeviceFormState } from "./types";
+import { translateText } from "./i18n";
+import type { CreateDeviceFormState, DeviceRow, ForecastResponse, UpdateDeviceFormState } from "./types";
 import {
   clamp,
   formatCurrency,
@@ -250,7 +253,7 @@ function PaginationControls({
 function toUtilityChartPoints(controller: DashboardController): UtilityChartPoint[] {
   return (controller.fleetSummary?.categories ?? []).map((category) => ({
     utilityType: category.utilityType,
-    label: utilityTypeLabel(category.utilityType),
+    label: translateText(controller.language, utilityTypeLabel(category.utilityType)),
     unitLabel: category.unitLabel,
     today: category.today.consumedUnits,
     week: category.week.consumedUnits,
@@ -291,6 +294,74 @@ function toMeterSeries(readings: MeterReading[]): MeterSeriesPoint[] {
       label: formatter.format(new Date(reading.timestamp)),
       consumption: reading.consumption ?? 0,
     }));
+}
+
+function toForecastSeries(forecast: ForecastResponse | null): ForecastSeriesPoint[] {
+  if (!forecast) {
+    return [];
+  }
+
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  const observed: ForecastSeriesPoint[] = forecast.observed
+    .filter((reading) => reading.consumption !== null && Number.isFinite(reading.consumption))
+    .map((reading) => ({
+      timestamp: reading.timestamp,
+      label: formatter.format(new Date(reading.timestamp)),
+      observed: reading.consumption ?? null,
+      predicted: null,
+      lower: null,
+      upper: null,
+    }));
+  const lastObserved = observed.at(-1);
+  const forecastPoints: ForecastSeriesPoint[] = forecast.forecast.map((point) => ({
+    timestamp: point.timestamp,
+    label: formatter.format(new Date(point.timestamp)),
+    observed: null,
+    predicted: point.value,
+    lower: point.lower,
+    upper: point.upper,
+  }));
+
+  if (lastObserved && forecastPoints.length > 0) {
+    forecastPoints.unshift({
+      ...lastObserved,
+      observed: null,
+      predicted: lastObserved.observed,
+    });
+  }
+
+  return [...observed, ...forecastPoints];
+}
+
+function forecastStatusMessage(forecast: ForecastResponse | null, error: string | null) {
+  if (error) {
+    return error;
+  }
+
+  if (!forecast) {
+    return "Forecast has not been loaded yet.";
+  }
+
+  if (forecast.model.status === "insufficient_data") {
+    return "ARIMA needs at least 12 valid historical points. Keep the simulator running to build enough history.";
+  }
+
+  if (forecast.model.status === "service_unavailable") {
+    return "Forecast service is not available. Telemetry remains visible; start the forecast service to generate ARIMA predictions.";
+  }
+
+  if (forecast.model.status === "model_error") {
+    return "ARIMA could not fit this device history. Try again after more regular telemetry is available.";
+  }
+
+  return null;
 }
 
 function toBillingChartPoints(rows: DeviceRow[]): BillingChartPoint[] {
@@ -342,6 +413,7 @@ export function OverviewView({ controller }: ViewProps) {
     streamStatus,
   } = controller;
   const [homeMode, setHomeMode] = useState<HomeMode>("summary");
+  const tr = (phrase: string) => translateText(controller.language, phrase);
 
   const utilityChartPoints = useMemo(() => toUtilityChartPoints(controller), [controller]);
   const topConsumerPoints = useMemo(() => toTopConsumerPoints(deviceRows), [deviceRows]);
@@ -351,8 +423,8 @@ export function OverviewView({ controller }: ViewProps) {
       <Panel className="p-4">
         <SectionHeader
           eyebrow="Home"
-          title="Fleet Overview"
-          subtitle="Operational health, live telemetry, and utility cost distribution."
+          title={tr("Fleet Overview")}
+          subtitle={tr("Operational health, live telemetry, and utility cost distribution.")}
           action={
             <div className="grid w-full grid-cols-2 rounded-full bg-surface-container-low p-1 md:w-auto">
               {HOME_MODE_OPTIONS.map((option) => (
@@ -375,22 +447,22 @@ export function OverviewView({ controller }: ViewProps) {
       ) : (
         <>
           <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <KpiCard label="Fleet Devices" value={devices.length} detail={`${activeDeviceCount} active devices`} icon="router" />
+            <KpiCard label={tr("Fleet Devices")} value={devices.length} detail={`${activeDeviceCount} active devices`} icon="router" />
             <KpiCard
-              label="Utility Categories"
+              label={tr("Utility Categories")}
               value={fleetSummary?.totals.utilityCategoryCount ?? 0}
-              detail="Electricity, water, gas, heating, cooling"
+              detail={tr("Electricity, water, gas, heating, cooling")}
               icon="dashboard"
               tone="neutral"
             />
             <KpiCard
-              label="Fleet Cost (30d)"
+              label={tr("Fleet Cost (30d)")}
               value={formatCurrency(fleetSummary?.totals.monthEstimatedCost)}
               detail={`Today: ${formatCurrency(fleetSummary?.totals.todayEstimatedCost)}`}
               icon="payments"
             />
             <KpiCard
-              label="Fleet Health"
+              label={tr("Fleet Health")}
               value={`${fleetHealthPercent}%`}
               detail={`${errorCount} critical | Stream: ${streamStatus}`}
               icon="monitor_heart"
@@ -407,9 +479,9 @@ export function OverviewView({ controller }: ViewProps) {
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
             <Panel className="xl:col-span-7">
               <SectionHeader
-                title="Utility Consumption"
-                subtitle="Aggregated consumption for today, week, and the last 30 days."
-                eyebrow="Today / Week / 30d"
+                title={tr("Utility Consumption")}
+                subtitle={tr("Aggregated consumption for today, week, and the last 30 days.")}
+                eyebrow={tr("Today / Week / 30d")}
               />
               <div className="mt-5">
                 <UtilityConsumptionChart data={utilityChartPoints} />
@@ -417,7 +489,7 @@ export function OverviewView({ controller }: ViewProps) {
             </Panel>
 
             <Panel className="xl:col-span-5">
-              <SectionHeader title="Cost Mix" subtitle="30-day estimated cost by utility category." eyebrow="Fleet cost" />
+              <SectionHeader title={tr("Cost Mix")} subtitle={tr("30-day estimated cost by utility category.")} eyebrow={tr("Fleet cost")} />
               <div className="mt-4">
                 <FleetCostDonut data={utilityChartPoints} />
               </div>
@@ -426,16 +498,16 @@ export function OverviewView({ controller }: ViewProps) {
 
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
             <Panel className="xl:col-span-7">
-              <SectionHeader title="Live Snapshot" subtitle="Current usage and cost across each utility." eyebrow="Stream" />
+              <SectionHeader title={tr("Live Snapshot")} subtitle={tr("Current usage and cost across each utility.")} eyebrow={tr("Stream")} />
               {liveByCategory.length > 0 ? (
                 <div className="mt-5 overflow-hidden rounded-lg border border-outline-variant/20">
                   <table className="w-full text-left text-sm">
                     <thead className="bg-surface-container-low text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
                       <tr>
-                        <th className="px-4 py-3">Utility</th>
-                        <th className="px-4 py-3">Devices</th>
-                        <th className="px-4 py-3">Latest</th>
-                        <th className="px-4 py-3">Cost</th>
+                        <th className="px-4 py-3">{tr("Utility")}</th>
+                        <th className="px-4 py-3">{tr("Devices")}</th>
+                        <th className="px-4 py-3">{tr("Latest")}</th>
+                        <th className="px-4 py-3">{tr("Cost")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -456,13 +528,13 @@ export function OverviewView({ controller }: ViewProps) {
                 </div>
               ) : (
                 <p className="mt-5 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-                  Waiting for live telemetry to build category snapshot.
+                  {tr("Waiting for live telemetry to build category snapshot.")}
                 </p>
               )}
             </Panel>
 
             <Panel className="xl:col-span-5">
-              <SectionHeader title="Recent Alerts" subtitle="Live operational notices and stream state." eyebrow="Live" />
+              <SectionHeader title={tr("Recent Alerts")} subtitle={tr("Live operational notices and stream state.")} eyebrow={tr("Live")} />
               <div className="mt-5 space-y-3">
                 {recentAlerts.length > 0 ? (
                   recentAlerts.map((alert) => (
@@ -481,7 +553,7 @@ export function OverviewView({ controller }: ViewProps) {
                   ))
                 ) : (
                   <p className="rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-                    No active alerts. Stream heartbeat is stable.
+                    {tr("No active alerts. Stream heartbeat is stable.")}
                   </p>
                 )}
               </div>
@@ -489,7 +561,7 @@ export function OverviewView({ controller }: ViewProps) {
           </section>
 
           <Panel>
-            <SectionHeader title="Top Devices By Latest Usage" subtitle="Fast ranking of the current highest consumers." eyebrow="Live ranking" />
+            <SectionHeader title={tr("Top Devices By Latest Usage")} subtitle={tr("Fast ranking of the current highest consumers.")} eyebrow={tr("Live ranking")} />
             <div className="mt-5">
               <TopConsumersChart data={topConsumerPoints} />
             </div>
@@ -561,20 +633,21 @@ export function DevicesView({ controller }: ViewProps) {
     () => getPageWindow(filteredDeviceRows, currentDevicePage, DEVICE_PAGE_SIZE),
     [currentDevicePage, filteredDeviceRows],
   );
+  const tr = (phrase: string) => translateText(controller.language, phrase);
 
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <KpiCard label="Total Fleet" value={devices.length} detail="Devices linked to this account" icon="router" />
-        <KpiCard label="Connected" value={connectedCount} detail="Live telemetry received recently" icon="wifi_tethering" tone="success" />
+        <KpiCard label={tr("Total Fleet")} value={devices.length} detail="Devices linked to this account" icon="router" />
+        <KpiCard label={tr("Connected")} value={connectedCount} detail="Live telemetry received recently" icon="wifi_tethering" tone="success" />
         <KpiCard label="Critical Errors" value={errorCount} detail="Devices with stale or failed telemetry" icon="warning" tone={errorCount > 0 ? "warning" : "neutral"} />
       </section>
 
       <Panel>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <SectionHeader
-            title="Device Inventory"
-            subtitle="Search, filter, claim, and maintain your utility meters."
+            title={tr("Device Inventory")}
+            subtitle={tr("Search, filter, claim, and maintain your utility meters.")}
             eyebrow={`${filteredDeviceRows.length} visible`}
           />
           <div className="flex flex-wrap items-center gap-2">
@@ -584,7 +657,7 @@ export function DevicesView({ controller }: ViewProps) {
               onClick={() => setClaimOpen((previous) => !previous)}
             >
               <UIIcon name="key" className="text-[14px]" />
-              Claim
+              {tr("Claim")}
             </button>
             <button
               type="button"
@@ -592,7 +665,7 @@ export function DevicesView({ controller }: ViewProps) {
               onClick={() => setShowCreateDevice(true)}
             >
               <UIIcon name="add" className="text-[14px]" />
-              Add Device
+              {tr("Add Device")}
             </button>
           </div>
         </div>
@@ -601,7 +674,7 @@ export function DevicesView({ controller }: ViewProps) {
           <form className="mt-5 rounded-lg bg-surface-container-low p-4" onSubmit={handleClaimDevices}>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
               <label className="block flex-1">
-                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Claim Code</span>
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{tr("Claim Code")}</span>
                 <input
                   className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 font-mono text-sm uppercase outline-none transition focus:border-primary"
                   placeholder="COMPANY-DEMO-2026"
@@ -633,7 +706,7 @@ export function DevicesView({ controller }: ViewProps) {
             <UIIcon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant" />
             <input
               className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 pl-11 text-sm outline-none transition focus:border-primary"
-              placeholder="Search by devEui or device name"
+              placeholder={tr("Search by devEui or device name")}
               value={searchQuery}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
@@ -656,7 +729,7 @@ export function DevicesView({ controller }: ViewProps) {
                   setDevicePage(1);
                 }}
               >
-                {value}
+                {tr(value === "all" ? "All" : statusLabel(value))}
               </button>
             ))}
           </div>
@@ -666,13 +739,13 @@ export function DevicesView({ controller }: ViewProps) {
           <table className="w-full text-left">
             <thead className="sticky top-0 bg-surface-container-low text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
               <tr>
-                <th className="px-4 py-3">Device</th>
-                <th className="px-4 py-3">Utility</th>
-                <th className="px-4 py-3">Tariff</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Last Seen</th>
-                <th className="px-4 py-3 text-right">Load</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{tr("Device")}</th>
+                <th className="px-4 py-3">{tr("Utility")}</th>
+                <th className="px-4 py-3">{tr("Tariff")}</th>
+                <th className="px-4 py-3">{tr("Status")}</th>
+                <th className="px-4 py-3">{tr("Last Seen")}</th>
+                <th className="px-4 py-3 text-right">{tr("Load")}</th>
+                <th className="px-4 py-3 text-right">{tr("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1191,16 +1264,22 @@ export function MeterView({ controller }: ViewProps) {
     streamStatus,
     lastHeartbeatAt,
     selectedCosts,
+    selectedForecast,
+    selectedForecastError,
     selectedReadings,
     currentLoadWatts,
     currentLoadKw,
     currentConsumption,
     handleSelectDevice,
   } = controller;
+  const tr = (phrase: string) => translateText(controller.language, phrase);
   const meterSeries = useMemo(() => toMeterSeries(selectedReadings), [selectedReadings]);
+  const forecastSeries = useMemo(() => toForecastSeries(selectedForecast), [selectedForecast]);
+  const forecastMessage = forecastStatusMessage(selectedForecast, selectedForecastError);
+  const arimaOrder = selectedForecast?.model.order ? `(${selectedForecast.model.order.join(", ")})` : "--";
 
   if (!selectedDevice) {
-    return <Panel className="text-sm text-on-surface-variant">Select or register a device to open meter details.</Panel>;
+    return <Panel className="text-sm text-on-surface-variant">{tr("Select or register a device to open meter details.")}</Panel>;
   }
 
   const gaugeProgress = clamp((currentLoadWatts ?? 0) / 6000, 0, 1);
@@ -1235,7 +1314,7 @@ export function MeterView({ controller }: ViewProps) {
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <Panel className="xl:col-span-4">
-          <SectionHeader title="Live Readings" eyebrow="Current meter state" />
+          <SectionHeader title={tr("Live Readings")} eyebrow={tr("Current meter state")} />
 
           <div className="mt-5 rounded-lg bg-surface-container-low p-5">
             <div className="relative mx-auto h-44 w-60 overflow-hidden">
@@ -1258,9 +1337,9 @@ export function MeterView({ controller }: ViewProps) {
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              <ReadingTile label="Consumption" value={formatQuantity(currentConsumption)} unit={selectedDevice.unitLabel} />
-              <ReadingTile label="Voltage" value={selectedLatest?.voltage?.toFixed(1) ?? "--"} unit="V" />
-              <ReadingTile label="Current" value={selectedLatest?.current?.toFixed(1) ?? "--"} unit="A" />
+              <ReadingTile label={tr("Consumption")} value={formatQuantity(currentConsumption)} unit={selectedDevice.unitLabel} />
+              <ReadingTile label={tr("Voltage")} value={selectedLatest?.voltage?.toFixed(1) ?? "--"} unit="V" />
+              <ReadingTile label={tr("Current")} value={selectedLatest?.current?.toFixed(1) ?? "--"} unit="A" />
             </div>
           </div>
         </Panel>
@@ -1270,9 +1349,9 @@ export function MeterView({ controller }: ViewProps) {
             <Panel className="md:col-span-1">
               <p className="inline-flex items-center gap-2 text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
                 <UIIcon name="wifi_tethering" className="text-[15px]" />
-                Stream Health
+                {tr("Stream Health")}
               </p>
-              <p className="mt-3 text-lg font-semibold text-tertiary">{streamStatus === "open" ? "Excellent" : streamStatus}</p>
+              <p className="mt-3 text-lg font-semibold text-tertiary">{streamStatus === "open" ? tr("Excellent") : streamStatus}</p>
               <p className="mt-1 text-sm text-on-surface-variant">Heartbeat: {lastHeartbeatAt ? formatRelativeTime(lastHeartbeatAt) : "--"}</p>
             </Panel>
 
@@ -1280,7 +1359,7 @@ export function MeterView({ controller }: ViewProps) {
               <div className="flex items-center justify-between gap-3">
                 <p className="inline-flex items-center gap-2 text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
                   <UIIcon name="payments" className="text-[15px]" />
-                  Cost Estimation
+                  {tr("Cost Estimation")}
                 </p>
                 <button
                   type="button"
@@ -1292,17 +1371,51 @@ export function MeterView({ controller }: ViewProps) {
                 </button>
               </div>
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <CostTile label="Today" cost={selectedCosts.today?.estimatedCost} units={selectedCosts.today?.consumedUnits} unitLabel={selectedDevice.unitLabel} />
-                <CostTile label="This Week" cost={selectedCosts.week?.estimatedCost} units={selectedCosts.week?.consumedUnits} unitLabel={selectedDevice.unitLabel} />
-                <CostTile label="This Month" cost={selectedCosts.month?.estimatedCost} units={selectedCosts.month?.consumedUnits} unitLabel={selectedDevice.unitLabel} highlight />
+                <CostTile label={tr("Today")} cost={selectedCosts.today?.estimatedCost} units={selectedCosts.today?.consumedUnits} unitLabel={selectedDevice.unitLabel} />
+                <CostTile label={tr("This Week")} cost={selectedCosts.week?.estimatedCost} units={selectedCosts.week?.consumedUnits} unitLabel={selectedDevice.unitLabel} />
+                <CostTile label={tr("This Month")} cost={selectedCosts.month?.estimatedCost} units={selectedCosts.month?.consumedUnits} unitLabel={selectedDevice.unitLabel} highlight />
               </div>
             </Panel>
           </div>
 
           <Panel>
-            <SectionHeader title="Consumption Profile" subtitle="Recent consumption trend for the selected meter." eyebrow="30-day telemetry" />
+            <SectionHeader title={tr("Consumption Profile")} subtitle={tr("Recent consumption trend for the selected meter.")} eyebrow={tr("30-day telemetry")} />
             <div className="mt-5 rounded-lg bg-surface-container-low p-3">
               <MeterAreaChart data={meterSeries} unitLabel={selectedDevice.unitLabel} />
+            </div>
+          </Panel>
+
+          <Panel>
+            <SectionHeader
+              title={tr("ARIMA Forecast")}
+              subtitle={tr("Observed history against the predicted short-term consumption index.")}
+              eyebrow={tr("Next 24 hours")}
+            />
+
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
+              <ForecastTile label={tr("Horizon")} value={`${selectedForecast?.query.horizonHours ?? 24}h`} />
+              <ForecastTile label={tr("Step")} value={`${selectedForecast?.query.stepHours ?? 3}h`} />
+              <ForecastTile label={tr("ARIMA Order")} value={arimaOrder} />
+              <ForecastTile
+                label={tr("Projected Cost")}
+                value={formatCurrency(selectedForecast?.estimate.estimatedCost)}
+                detail={
+                  <QuantityWithUnit
+                    value={selectedForecast?.estimate.forecastedDeltaUnits}
+                    unit={selectedDevice.unitLabel}
+                  />
+                }
+              />
+            </div>
+
+            {forecastMessage ? (
+              <p className="mt-4 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
+                {forecastMessage}
+              </p>
+            ) : null}
+
+            <div className="mt-5 rounded-lg bg-surface-container-low p-3">
+              <ForecastComparisonChart data={forecastSeries} unitLabel={selectedDevice.unitLabel} />
             </div>
           </Panel>
         </div>
@@ -1319,6 +1432,24 @@ function ReadingTile({ label, value, unit }: { label: string; value: string; uni
         <span>{value}</span>
         <span className="text-sm font-medium text-on-surface-variant">{unit}</span>
       </p>
+    </div>
+  );
+}
+
+function ForecastTile({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail?: ReactNode;
+}) {
+  return (
+    <div className="rounded-lg bg-surface-container-low px-4 py-3">
+      <p className="text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">{label}</p>
+      <p className="mt-1 font-mono text-lg font-bold">{value}</p>
+      {detail ? <p className="mt-0.5 text-xs text-on-surface-variant">{detail}</p> : null}
     </div>
   );
 }
@@ -1349,6 +1480,7 @@ function CostTile({
 
 export function BillingView({ controller }: ViewProps) {
   const { fleetSummary, selectedDataLoading, deviceRows } = controller;
+  const tr = (phrase: string) => translateText(controller.language, phrase);
   const billingChartPoints = useMemo(() => toBillingChartPoints(deviceRows), [deviceRows]);
   const topCostRows = useMemo(() => toDeviceCostRanking(deviceRows), [deviceRows]);
   const [billingPage, setBillingPage] = useState(1);
@@ -1363,19 +1495,19 @@ export function BillingView({ controller }: ViewProps) {
     <div className="space-y-6">
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <KpiCard
-          label="Today"
+          label={tr("Today")}
           value={formatCurrency(fleetSummary?.totals.todayEstimatedCost)}
-          detail="Fleet estimated cost"
+          detail={tr("Fleet cost")}
           icon="payments"
         />
         <KpiCard
-          label="This Week"
+          label={tr("This Week")}
           value={formatCurrency(fleetSummary?.totals.weekEstimatedCost)}
           detail="Rolling seven-day estimate"
           icon="insights"
         />
         <KpiCard
-          label="This Month"
+          label={tr("This Month")}
           value={formatCurrency(fleetSummary?.totals.monthEstimatedCost)}
           detail={`${fleetSummary?.totals.activeDeviceCount ?? 0} active devices`}
           icon="attach_money"
@@ -1386,14 +1518,14 @@ export function BillingView({ controller }: ViewProps) {
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <Panel className="xl:col-span-8">
-          <SectionHeader title="Cost By Utility" subtitle="Estimated cumulative cost from the latest readings." eyebrow="Fleet billing" />
+          <SectionHeader title={tr("Cost By Utility")} subtitle={tr("Estimated cumulative cost from the latest readings.")} eyebrow={tr("Fleet billing")} />
           <div className="mt-5">
             <BillingUtilityChart data={billingChartPoints} />
           </div>
         </Panel>
 
         <Panel className="xl:col-span-4">
-          <SectionHeader title="Top Cost Drivers" subtitle="Highest estimated cumulative costs." eyebrow="Ranking" />
+          <SectionHeader title={tr("Top Cost Drivers")} subtitle={tr("Highest estimated cumulative costs.")} eyebrow={tr("Ranking")} />
           <div className="mt-5 space-y-3">
             {topCostRows.map((row, index) => (
               <article key={`cost-driver-${row.device.id}`} className="rounded-lg bg-surface-container-low px-4 py-3">
@@ -1416,8 +1548,8 @@ export function BillingView({ controller }: ViewProps) {
 
       <Panel>
         <SectionHeader
-          title="Fleet Billing Projection"
-          subtitle="Instant estimate using latest cumulative consumption and configured tariff per unit."
+          title={tr("Fleet Billing Projection")}
+          subtitle={tr("Instant estimate using latest cumulative consumption and configured tariff per unit.")}
           eyebrow={`${deviceRows.length} devices`}
         />
 
@@ -1426,12 +1558,12 @@ export function BillingView({ controller }: ViewProps) {
             <table className="w-full text-left">
               <thead className="bg-surface-container-low text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
                 <tr>
-                  <th className="px-4 py-3">Device</th>
-                  <th className="px-4 py-3">Utility</th>
-                  <th className="px-4 py-3">Tariff</th>
-                  <th className="px-4 py-3">Latest Consumption</th>
-                  <th className="px-4 py-3">Est. Cost</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">{tr("Device")}</th>
+                  <th className="px-4 py-3">{tr("Utility")}</th>
+                  <th className="px-4 py-3">{tr("Tariff")}</th>
+                  <th className="px-4 py-3">{tr("Latest")} {tr("Consumption")}</th>
+                  <th className="px-4 py-3">{tr("Cost")}</th>
+                  <th className="px-4 py-3">{tr("Status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1479,13 +1611,13 @@ export function BillingView({ controller }: ViewProps) {
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">Usage</p>
+                      <p className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">{tr("Usage")}</p>
                       <p className="mt-1">
                         <QuantityWithUnit value={row.latestConsumption} unit={row.device.unitLabel} />
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">Cost</p>
+                      <p className="text-xs uppercase tracking-[0.08em] text-on-surface-variant">{tr("Cost")}</p>
                       <p className="mt-1 font-mono font-semibold">{formatCurrency(cumulativeCost)}</p>
                     </div>
                   </div>

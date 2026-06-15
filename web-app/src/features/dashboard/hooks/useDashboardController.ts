@@ -6,6 +6,7 @@ import type { MeterReading } from "@/lib/services/influx.service";
 import { defaultUnitLabelForUtilityType, type UtilityType } from "@/lib/utility";
 
 import { NAV_ITEMS, VIEW_PATHS } from "../constants";
+import { LANGUAGE_STORAGE_KEY, type DashboardLanguage } from "../i18n";
 import type {
   AlertItem,
   AuthFormState,
@@ -19,6 +20,7 @@ import type {
   DevicesResponse,
   FleetSummary,
   FleetSummaryResponse,
+  ForecastResponse,
   LatestReadingResponse,
   MeResponse,
   PublicDevice,
@@ -108,6 +110,8 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   const initialRouteView = resolveViewFromPath(pathname) ?? initialView;
 
   const [bootLoading, setBootLoading] = useState(!dashboardSessionCache.bootResolved);
+  const [language, setLanguage] = useState<DashboardLanguage>("en");
+  const [languageHydrated, setLanguageHydrated] = useState(false);
   const [user, setUser] = useState<PublicUser | null>(dashboardSessionCache.user);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [authSubmitting, setAuthSubmitting] = useState(false);
@@ -173,6 +177,8 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     week: null,
     month: null,
   });
+  const [selectedForecast, setSelectedForecast] = useState<ForecastResponse | null>(null);
+  const [selectedForecastError, setSelectedForecastError] = useState<string | null>(null);
   const [selectedDataLoading, setSelectedDataLoading] = useState(false);
   const [selectedDataError, setSelectedDataError] = useState<string | null>(null);
   const [fleetSummary, setFleetSummary] = useState<FleetSummary | null>(null);
@@ -283,6 +289,23 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   }, [user]);
 
   useEffect(() => {
+    const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    const nextLanguage = storedLanguage === "ro" ? "ro" : "en";
+    setLanguage(nextLanguage);
+    document.documentElement.lang = nextLanguage;
+    setLanguageHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!languageHydrated) {
+      return;
+    }
+
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    document.documentElement.lang = language;
+  }, [language, languageHydrated]);
+
+  useEffect(() => {
     dashboardSessionCache.devices = devices;
   }, [devices]);
 
@@ -348,7 +371,13 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     try {
       const stop = new Date().toISOString();
 
-      const [latestPayload, readingsPayload, todayCostPayload, weekCostPayload, monthCostPayload] =
+      const forecastRequest = apiRequest<ForecastResponse>(
+        `/api/devices/${devEui}/forecast?lookbackHours=${24 * 30}&horizonHours=24&stepHours=3`,
+      )
+        .then((payload) => ({ payload, error: null as string | null }))
+        .catch((error) => ({ payload: null, error: extractErrorMessage(error) }));
+
+      const [latestPayload, readingsPayload, todayCostPayload, weekCostPayload, monthCostPayload, forecastResult] =
         await Promise.all([
           apiRequest<LatestReadingResponse>(`/api/devices/${devEui}/readings?mode=latest`),
           apiRequest<RangeReadingsResponse>(
@@ -371,6 +400,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
               rangeStart(24 * 30),
             )}&stop=${encodeURIComponent(stop)}`,
           ),
+          forecastRequest,
         ]);
 
       setSelectedLatest(latestPayload.reading);
@@ -380,10 +410,14 @@ export function useDashboardController(initialView: ViewKey = "overview") {
         week: weekCostPayload.cost,
         month: monthCostPayload.cost,
       });
+      setSelectedForecast(forecastResult.payload);
+      setSelectedForecastError(forecastResult.error);
     } catch (error) {
       setSelectedDataError(extractErrorMessage(error));
       setSelectedLatest(null);
       setSelectedReadings([]);
+      setSelectedForecast(null);
+      setSelectedForecastError(null);
       setSelectedCosts({
         today: null,
         week: null,
@@ -429,6 +463,8 @@ export function useDashboardController(initialView: ViewKey = "overview") {
         week: null,
         month: null,
       });
+      setSelectedForecast(null);
+      setSelectedForecastError(null);
       return;
     }
 
@@ -898,6 +934,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
 
   return {
     bootLoading,
+    language,
     user,
     authMode,
     authSubmitting,
@@ -928,6 +965,8 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     selectedReadings,
     selectedLatest,
     selectedCosts,
+    selectedForecast,
+    selectedForecastError,
     selectedDataLoading,
     selectedDataError,
     fleetSummary,
@@ -968,6 +1007,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     setCreateForm,
     setEditForm,
     setActiveViewWithRoute,
+    setLanguage,
     loadDevices,
     loadFleetSummary,
     loadSelectedDeviceData,

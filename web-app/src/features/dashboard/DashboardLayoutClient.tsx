@@ -14,7 +14,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
   const controller = useDashboardController();
 
   if (controller.bootLoading) {
-    return <BootLoadingScreen />;
+    return <BootLoadingScreen language={controller.language} />;
   }
 
   if (!controller.user) {

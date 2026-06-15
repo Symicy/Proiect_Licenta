@@ -3,6 +3,7 @@
 import type { DashboardPageProps } from "./types";
 import { useDashboardControllerContext } from "./DashboardControllerContext";
 import { BillingView, DevicesView, MeterView, OverviewView } from "./DashboardViews";
+import { dashboardText } from "./i18n";
 
 function DashboardContentSkeleton() {
   return (
@@ -22,6 +23,7 @@ export default function DashboardPage({ initialView = "overview" }: DashboardPag
   const controller = useDashboardControllerContext();
   const activeView = controller.activeView ?? initialView;
   const showInitialSkeleton = controller.devicesLoading && controller.devices.length === 0;
+  const text = dashboardText(controller.language);
 
   return (
     <>
@@ -29,7 +31,7 @@ export default function DashboardPage({ initialView = "overview" }: DashboardPag
 
       {controller.devicesLoading && !showInitialSkeleton ? (
         <div className="rounded-xl bg-surface-container p-6 text-sm text-on-surface-variant">
-          Loading device inventory...
+          {text.loadingInventory}
         </div>
       ) : null}
 

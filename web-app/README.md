@@ -20,10 +20,10 @@ Implemented:
 - dashboard pages for overview, devices, meter details, and billing
 - map mode inside the overview page
 - MQTT worker for ChirpStack uplink ingestion into InfluxDB
+- ARIMA forecasting endpoint and Meter dashboard forecast visualization
 
 Still pending:
 
-- forecasting / ARIMA module
 - automated regression tests
 - reproducible thesis evidence package
 
@@ -87,6 +87,32 @@ npm run provision:demo-devices
 ```
 
 The provisioning script creates or refreshes 50 generated devices in LWN-Simulator, ChirpStack, and the app DB. It is idempotent, so rerunning it updates existing generated devices instead of adding duplicates.
+
+## Forecasting Service
+
+The ARIMA forecast module runs as a small Python FastAPI service in `forecast-service/`.
+
+Docker Compose exposes it on:
+
+```text
+http://localhost:8001
+```
+
+The web app reads it through:
+
+```text
+FORECAST_SERVICE_URL=http://localhost:8001
+```
+
+Port `8000` is already used by LWN-Simulator, so the Python container listens internally on `8000` but is mapped to local host port `8001`. The forecast service receives prepared historical points from the Next.js API; it does not receive InfluxDB credentials.
+
+Useful checks:
+
+```powershell
+curl http://localhost:8001/health
+cd forecast-service
+python -m pytest
+```
 
 ## Database Migrations
 
@@ -156,6 +182,7 @@ API:
 - `DELETE /api/devices/[devEui]`
 - `GET /api/devices/[devEui]/readings`
 - `GET /api/devices/[devEui]/cost`
+- `GET /api/devices/[devEui]/forecast`
 - `GET /api/devices/summary`
 - `GET /api/devices/stream`
 
@@ -167,11 +194,12 @@ API:
 - ChirpStack stores LoRaWAN identity plus import metadata in tags/variables; the app stores final business ownership.
 - Claim codes are stored as hashes in the app and mirrored as hashes in ChirpStack variables.
 - Billing is computed as `consumedUnits * tariffPerUnit`.
+- Forecasting reads aggregated `meter_reading` history from InfluxDB in Next.js, sends only timestamp/value points to the Python ARIMA service, and returns forecasted consumption delta plus estimated cost.
 - The standalone `/map` route was removed; map functionality is now part of the overview page.
 
 ## Known Cleanup
 
 - Move tracked secrets out of `.env` and commit an `.env.example`.
-- Add automated tests for ownership, billing, telemetry, and SSE behavior.
+- Add automated tests for ownership, billing, telemetry, forecasting, and SSE behavior.
 - Consider moving the MQTT worker into Docker Compose for full demo reproducibility.
 - Normalize or document the difference between Influx `consumption` and `energy` fields before final thesis evidence.

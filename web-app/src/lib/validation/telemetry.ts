@@ -72,9 +72,16 @@ export const streamQuerySchema = z.object({
   pollMs: z.coerce.number().int().min(1000).max(15000).default(3000),
 });
 
+export const forecastQuerySchema = z.object({
+  lookbackHours: z.coerce.number().int().min(24).max(2160).default(720),
+  horizonHours: z.coerce.number().int().min(1).max(168).default(24),
+  stepHours: z.coerce.number().int().min(1).max(24).default(3),
+});
+
 export type ReadingsQueryInput = z.infer<typeof readingsQuerySchema>;
 export type CostQueryInput = z.infer<typeof costQuerySchema>;
 export type StreamQueryInput = z.infer<typeof streamQuerySchema>;
+export type ForecastQueryInput = z.infer<typeof forecastQuerySchema>;
 
 export function resolveDateRange(input: {
   start?: string;

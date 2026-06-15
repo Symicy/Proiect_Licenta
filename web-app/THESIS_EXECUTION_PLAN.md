@@ -1,6 +1,6 @@
 # Thesis Execution Plan - LoRaWAN Smart Utility Monitoring
 
-Last updated: 2026-06-01
+Last updated: 2026-06-09
 
 ## Current State
 
@@ -16,10 +16,12 @@ Completed pieces:
 6. Development command `npm run dev:all` that starts both the Prisma-aware Next.js dev server and the MQTT worker.
 7. Claim-code assignment flow for company and individual customer accounts.
 8. Demo provisioning script that creates 50 generated devices across LWN-Simulator, ChirpStack, and the app database.
+9. ARIMA forecasting module with a Python FastAPI service, protected Next.js forecast endpoint, and Meter dashboard visualization.
 
-Current next major feature:
+Current next major work:
 
-1. Phase 7 predictive module: forecasting service, forecast endpoint, and predicted-vs-observed dashboard visualization.
+1. Validate ARIMA behavior with fresh simulator data and capture thesis evidence.
+2. Add automated regression tests around ownership, telemetry, billing, and forecasting.
 
 ## Core Invariants
 
@@ -136,8 +138,9 @@ Telemetry and billing:
 
 1. `GET /api/devices/[devEui]/readings`
 2. `GET /api/devices/[devEui]/cost`
-3. `GET /api/devices/summary`
-4. `GET /api/devices/stream`
+3. `GET /api/devices/[devEui]/forecast`
+4. `GET /api/devices/summary`
+5. `GET /api/devices/stream`
 
 ## Implemented UI Surface
 
@@ -146,7 +149,7 @@ Routes:
 1. `/` redirects to `/home`
 2. `/home` shows overview and map mode
 3. `/devices` manages inventory, filters, creation, and editing
-4. `/meter` shows selected-device live readings, chart, and billing details
+4. `/meter` shows selected-device live readings, historical chart, ARIMA forecast, and billing details
 5. `/billing` shows selected-device and fleet cost summaries
 
 Current navigation items:
@@ -288,22 +291,23 @@ Delivered:
 
 ### Phase 7 - Predictive Module
 
-Status: next.
+Status: implemented; requires validation with fresh demo telemetry.
 
-Required:
+Delivered:
 
-1. Decide forecasting implementation strategy.
-2. Add service that reads historical Influx data and creates forecast points.
-3. Expose forecast endpoint, likely `GET /api/devices/[devEui]/forecast`.
-4. Add validation for forecast horizon, window, and aggregation.
-5. Add predicted-vs-observed visualization in the meter view.
-6. Document the forecasting method clearly for thesis use.
+1. Added `forecast-service/`, a Python FastAPI service using `statsmodels` ARIMA.
+2. Exposed `POST /forecast` with bounded AIC order selection over ARIMA `(p,d,q)`.
+3. Added `GET /api/devices/[devEui]/forecast` with auth, ownership checks, and forecast query validation.
+4. Kept InfluxDB access in Next.js; the Python service receives only timestamp/value training points.
+5. Added forecasted delta and estimated cost using the selected device tariff.
+6. Added observed-vs-predicted ARIMA visualization in the Meter view.
+7. Added non-blocking UI states for insufficient data, model errors, and service unavailability.
 
-Pragmatic implementation note:
+Implementation note:
 
-1. A full ARIMA implementation in TypeScript may add risk.
-2. A thesis-safe path is to implement a clear forecasting module with documented assumptions, then call it ARIMA-style only if the method genuinely matches ARIMA behavior.
-3. If strict ARIMA is required, consider isolating forecasting in a Python service or using a proven package rather than hand-rolling math.
+1. Strict ARIMA is implemented in Python with `statsmodels`, not hand-written TypeScript math.
+2. LWN-Simulator already uses host port `8000`, so Docker Compose exposes the forecast service on host port `8001` while the container listens on `8000`.
+3. Default web-app forecast URL is `http://localhost:8001`.
 
 ### Phase 8 - Hardening and Thesis Evidence
 
@@ -329,7 +333,7 @@ Required:
 1. `.env` is tracked in git. Move secrets to local-only files and commit an `.env.example`.
 2. Docker Compose contains development credentials. This is acceptable for local thesis infrastructure, but the thesis should explicitly describe it as local-only.
 3. MQTT worker is still a local Node process, not a Docker Compose service. `dev:all` improves development, but full demo reproducibility would be stronger if the worker became a Compose service later.
-4. Billing currently accepts both `consumption` and `energy` fields. If both exist for the same device/range, billing semantics must be documented or normalized to one canonical field.
+4. Billing and forecasting currently accept both `consumption` and `energy` fields. `consumption` is canonical, while `energy` is a backward-compatible fallback.
 5. Automated tests are still missing.
 6. Some older notes/config comments had encoding damage. New documentation should stay UTF-8 clean or ASCII-only.
 
@@ -338,5 +342,6 @@ Required:
 1. Run a fresh simulator demo with `docker compose up -d` and `npm run dev:all`.
 2. Confirm a new uplink appears in InfluxDB under `meter_reading`.
 3. Confirm the dashboard updates through SSE without refresh.
-4. Start Phase 7 forecasting implementation.
-5. Add tests and thesis evidence after the forecasting module is stable.
+4. Start `forecast-service` and confirm `GET /api/devices/[devEui]/forecast` returns ARIMA output for a device with enough history.
+5. Capture forecast screenshots and API responses for thesis evidence.
+6. Add tests and final thesis evidence after the forecasting module is stable.

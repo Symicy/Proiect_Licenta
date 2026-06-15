@@ -10,6 +10,7 @@
     "dev:all": "concurrently --kill-others-on-fail -n web,worker -c cyan,green \"npm run dev:web\" \"npm run worker\"",
     "prisma:generate": "prisma generate",
     "provision:demo-devices": "node scripts/provision-demo-devices.mjs",
+    "seed:history": "node scripts/seed-historical-telemetry.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

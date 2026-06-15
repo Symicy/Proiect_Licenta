@@ -100,6 +100,17 @@ services:
       - ./simulator_data:/usr/src/app/db
     restart: unless-stopped
 
+  # 8. Serviciu predictiv ARIMA (forecasting consum pe termen scurt)
+  forecast-service:
+    build:
+      context: ./forecast-service
+      dockerfile: Dockerfile
+    container_name: wattwise_forecast_service
+    ports:
+      # LWN-Simulator already uses host port 8000, so the ARIMA service is exposed on 8001 locally.
+      - "8001:8000"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   influxdb_data:

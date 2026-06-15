@@ -1,5 +1,6 @@
 import type { MeterReading } from "@/lib/services/influx.service";
 import type { UtilityType } from "@/lib/utility";
+import type { DashboardLanguage } from "./i18n";
 
 export type UserRole = "ADMIN" | "CUSTOMER";
 export type CustomerType = "INDIVIDUAL" | "COMPANY";
@@ -81,6 +82,37 @@ export type RangeReadingsResponse = {
 export type CostResponse = {
   device: PublicDevice;
   cost: DeviceCostResult;
+};
+
+export type ForecastPoint = {
+  timestamp: string;
+  value: number;
+  lower: number | null;
+  upper: number | null;
+};
+
+export type ForecastResponse = {
+  device: PublicDevice;
+  query: {
+    start: string;
+    stop: string;
+    lookbackHours: number;
+    horizonHours: number;
+    stepHours: number;
+  };
+  observed: MeterReading[];
+  forecast: ForecastPoint[];
+  model: {
+    status: "ok" | "insufficient_data" | "model_error" | "service_unavailable";
+    order: [number, number, number] | null;
+    metadata: Record<string, number | string | null>;
+  };
+  estimate: {
+    forecastedDeltaUnits: number;
+    tariffPerUnit: number;
+    unitLabel: string;
+    estimatedCost: number;
+  };
 };
 
 export type UtilityCategorySummary = {
@@ -186,3 +218,5 @@ export type UpdateDeviceFormState = {
 export type DashboardPageProps = {
   initialView?: ViewKey;
 };
+
+export type { DashboardLanguage };

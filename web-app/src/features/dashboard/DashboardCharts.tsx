@@ -7,7 +7,9 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Legend,
+  Line,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -44,6 +46,15 @@ export type MeterSeriesPoint = {
   timestamp: string;
   label: string;
   consumption: number;
+};
+
+export type ForecastSeriesPoint = {
+  timestamp: string;
+  label: string;
+  observed: number | null;
+  predicted: number | null;
+  lower: number | null;
+  upper: number | null;
 };
 
 export type BillingChartPoint = {
@@ -130,10 +141,9 @@ function CurrencyTooltip({ active, payload, label }: { active?: boolean; payload
 
 export function FleetCostDonut({ data }: { data: UtilityChartPoint[] }) {
   const chartData = data.filter((point) => point.cost > 0);
-  const displayData = chartData.length > 0 ? chartData : data.map((point) => ({ ...point, cost: point.devices }));
 
-  if (displayData.length === 0) {
-    return <EmptyChart label="No category data available yet." />;
+  if (chartData.length === 0) {
+    return <EmptyChart label="No cost data available for the selected period yet." />;
   }
 
   return (
@@ -141,7 +151,7 @@ export function FleetCostDonut({ data }: { data: UtilityChartPoint[] }) {
       <ResponsiveContainer {...RESPONSIVE_CHART_PROPS}>
         <PieChart>
           <Pie
-            data={displayData}
+            data={chartData}
             dataKey="cost"
             nameKey="label"
             innerRadius="58%"
@@ -150,7 +160,7 @@ export function FleetCostDonut({ data }: { data: UtilityChartPoint[] }) {
             stroke="rgba(6,14,32,0.55)"
             strokeWidth={3}
           >
-            {displayData.map((point) => (
+            {chartData.map((point) => (
               <Cell key={`donut-${point.utilityType}`} fill={utilityColor(point.utilityType)} />
             ))}
           </Pie>
@@ -165,6 +175,11 @@ export function FleetCostDonut({ data }: { data: UtilityChartPoint[] }) {
 export function UtilityConsumptionChart({ data }: { data: UtilityChartPoint[] }) {
   if (data.length === 0) {
     return <EmptyChart label="No utility consumption data available yet." />;
+  }
+
+  const hasConsumptionData = data.some((point) => point.today > 0 || point.week > 0 || point.month > 0);
+  if (!hasConsumptionData) {
+    return <EmptyChart label="No consumption delta available for the selected periods yet." />;
   }
 
   return (
@@ -267,6 +282,108 @@ export function MeterAreaChart({ data, unitLabel }: { data: MeterSeriesPoint[]; 
             activeDot={{ r: 4, fill: PANEL_TEXT }}
           />
         </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export function ForecastComparisonChart({ data, unitLabel }: { data: ForecastSeriesPoint[]; unitLabel: string }) {
+  const hasForecast = data.some((point) => point.predicted !== null);
+  if (data.length < 2 || !hasForecast) {
+    return <EmptyChart label="No forecast series available for this device yet." />;
+  }
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer {...RESPONSIVE_CHART_PROPS}>
+        <ComposedChart data={data} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
+          <defs>
+            <linearGradient id="forecastObservedGradient" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.32} />
+              <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.03} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke={GRID_COLOR} vertical={false} />
+          <XAxis
+            dataKey="label"
+            minTickGap={28}
+            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis tick={{ fill: AXIS_COLOR, fontSize: 12 }} tickLine={false} axisLine={false} />
+          <Tooltip
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) {
+                return null;
+              }
+
+              return (
+                <div className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 py-2 text-xs shadow-xl">
+                  <p className="font-semibold text-on-surface">{label}</p>
+                  <div className="mt-1 space-y-1">
+                    {payload.map((item) => {
+                      if (item.value === null || item.value === undefined) {
+                        return null;
+                      }
+
+                      return (
+                        <p key={`${item.name}-${item.dataKey}`} className="flex items-center gap-2 text-on-surface-variant">
+                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color ?? "#c0c1ff" }} />
+                          <span>{item.name}: </span>
+                          <span className="font-mono text-on-surface">
+                            {formatQuantity(Number(item.value))} {unitLabel}
+                          </span>
+                        </p>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }}
+          />
+          <Legend wrapperStyle={{ color: AXIS_COLOR, fontSize: 12 }} />
+          <Area
+            type="monotone"
+            dataKey="observed"
+            name="Observed"
+            stroke="#38bdf8"
+            strokeWidth={2}
+            fill="url(#forecastObservedGradient)"
+            dot={false}
+            connectNulls={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="predicted"
+            name="ARIMA forecast"
+            stroke="#c0c1ff"
+            strokeWidth={3}
+            dot={{ r: 3, fill: "#c0c1ff" }}
+            activeDot={{ r: 4, fill: PANEL_TEXT }}
+            connectNulls={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="lower"
+            name="Lower 95%"
+            stroke="rgba(192, 193, 255, 0.45)"
+            strokeDasharray="4 4"
+            strokeWidth={1.5}
+            dot={false}
+            connectNulls={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="upper"
+            name="Upper 95%"
+            stroke="rgba(192, 193, 255, 0.45)"
+            strokeDasharray="4 4"
+            strokeWidth={1.5}
+            dot={false}
+            connectNulls={false}
+          />
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
