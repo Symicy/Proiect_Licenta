@@ -1,7 +1,15 @@
-import { createHash } from "crypto";
 import { config as loadEnv } from "dotenv";
 import { InfluxDB, Point } from "@influxdata/influxdb-client";
 import pg from "pg";
+import {
+  DEFAULT_HISTORY_DAYS,
+  DEFAULT_STEP_HOURS,
+  consumptionIncrement,
+  initialCumulativeConsumption,
+  readingCurrent,
+  readingVoltage,
+  roundDownToHour,
+} from "./demo-telemetry-profile.mjs";
 
 loadEnv({ path: new URL("../.env", import.meta.url) });
 
@@ -12,54 +20,6 @@ const INFLUX_URL = process.env.INFLUX_URL;
 const INFLUX_TOKEN = process.env.INFLUX_TOKEN;
 const INFLUX_ORG = process.env.INFLUX_ORG;
 const INFLUX_BUCKET = process.env.INFLUX_BUCKET;
-
-const DEFAULT_DAYS = 45;
-const DEFAULT_STEP_HOURS = 3;
-
-const UTILITY_PROFILES = {
-  ELECTRICITY: {
-    base: 1.2,
-    dailyAmplitude: 0.45,
-    noise: 0.18,
-    voltage: 230,
-    currentFactor: 4.3,
-  },
-  GAS: {
-    base: 0.55,
-    dailyAmplitude: 0.2,
-    noise: 0.08,
-    voltage: 3.6,
-    currentFactor: 0.03,
-  },
-  WATER: {
-    base: 0.32,
-    dailyAmplitude: 0.12,
-    noise: 0.05,
-    voltage: 3.6,
-    currentFactor: 0.02,
-  },
-  HEATING: {
-    base: 0.95,
-    dailyAmplitude: 0.38,
-    noise: 0.14,
-    voltage: 230,
-    currentFactor: 3.2,
-  },
-  COOLING: {
-    base: 0.8,
-    dailyAmplitude: 0.34,
-    noise: 0.12,
-    voltage: 230,
-    currentFactor: 2.9,
-  },
-  OTHER: {
-    base: 0.35,
-    dailyAmplitude: 0.12,
-    noise: 0.06,
-    voltage: 12,
-    currentFactor: 0.4,
-  },
-};
 
 function required(value, label) {
   if (!value) {
@@ -74,44 +34,17 @@ function readPositiveNumber(name, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function hashUnit(seed) {
-  const hash = createHash("sha256").update(seed).digest();
-  return hash.readUInt32BE(0) / 0xffffffff;
+function readBoolean(name, fallback) {
+  const rawValue = process.env[name];
+  if (rawValue === undefined) {
+    return fallback;
+  }
+
+  return !["0", "false", "no", "off"].includes(rawValue.trim().toLowerCase());
 }
 
-function roundDownToHour(date) {
-  const rounded = new Date(date);
-  rounded.setMinutes(0, 0, 0);
-  return rounded;
-}
-
-function profileFor(utilityType) {
-  return UTILITY_PROFILES[utilityType] ?? UTILITY_PROFILES.OTHER;
-}
-
-function consumptionIncrement(device, stepIndex, stepHours) {
-  const profile = profileFor(device.utilityType);
-  const hourOfDay = (stepIndex * stepHours) % 24;
-  const dayIndex = Math.floor((stepIndex * stepHours) / 24);
-  const deviceBias = 0.72 + hashUnit(`${device.devEui}:bias`) * 0.68;
-  const dailyWave = Math.sin(((hourOfDay - 7) / 24) * Math.PI * 2);
-  const weeklyWave = Math.sin((dayIndex / 7) * Math.PI * 2);
-  const deterministicNoise = (hashUnit(`${device.devEui}:${stepIndex}`) - 0.5) * profile.noise;
-  const profileMultiplier =
-    1 + profile.dailyAmplitude * Math.max(dailyWave, -0.45) + 0.12 * weeklyWave + deterministicNoise;
-
-  return Math.max(profile.base * deviceBias * profileMultiplier * stepHours, 0.01);
-}
-
-function readingVoltage(device, stepIndex) {
-  const profile = profileFor(device.utilityType);
-  const wobble = (hashUnit(`${device.devEui}:voltage:${stepIndex}`) - 0.5) * 2.2;
-  return profile.voltage + wobble;
-}
-
-function readingCurrent(device, increment, stepHours) {
-  const profile = profileFor(device.utilityType);
-  return Math.max((increment / stepHours) * profile.currentFactor, 0.01);
+function escapeInfluxPredicateString(value) {
+  return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
 }
 
 async function listDevices(pool) {
@@ -125,6 +58,40 @@ async function listDevices(pool) {
   return result.rows;
 }
 
+async function deleteExistingTelemetry(devices) {
+  if (!readBoolean("SEED_HISTORY_CLEAN", true)) {
+    return 0;
+  }
+
+  let deleted = 0;
+  for (const device of devices) {
+    const response = await fetch(
+      `${INFLUX_URL}/api/v2/delete?org=${encodeURIComponent(INFLUX_ORG)}&bucket=${encodeURIComponent(INFLUX_BUCKET)}`,
+      {
+        method: "POST",
+        headers: {
+          authorization: `Token ${INFLUX_TOKEN}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          start: "1970-01-01T00:00:00Z",
+          stop: "2100-01-01T00:00:00Z",
+          predicate: `_measurement="meter_reading" AND devEui="${escapeInfluxPredicateString(device.devEui)}"`,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Failed to delete old telemetry for ${device.devEui}: ${response.status} ${text}`);
+    }
+
+    deleted += 1;
+  }
+
+  return deleted;
+}
+
 async function main() {
   required(APP_DATABASE_URL, "DATABASE_URL");
   required(INFLUX_URL, "INFLUX_URL");
@@ -132,7 +99,7 @@ async function main() {
   required(INFLUX_ORG, "INFLUX_ORG");
   required(INFLUX_BUCKET, "INFLUX_BUCKET");
 
-  const days = readPositiveNumber("SEED_HISTORY_DAYS", DEFAULT_DAYS);
+  const days = readPositiveNumber("SEED_HISTORY_DAYS", DEFAULT_HISTORY_DAYS);
   const stepHours = readPositiveNumber("SEED_HISTORY_STEP_HOURS", DEFAULT_STEP_HOURS);
   const pointCount = Math.floor((days * 24) / stepHours) + 1;
   const stop = process.env.SEED_HISTORY_STOP
@@ -155,16 +122,21 @@ async function main() {
       return;
     }
 
+    const cleanedDevices = await deleteExistingTelemetry(devices);
+    if (cleanedDevices > 0) {
+      console.log(`Deleted previous meter_reading telemetry for ${cleanedDevices} devices.`);
+    }
+
     let written = 0;
     for (const device of devices) {
-      let cumulative = 80 + hashUnit(`${device.devEui}:start`) * 240;
+      let cumulative = initialCumulativeConsumption(device);
 
       for (let index = 0; index < pointCount; index += 1) {
         const timestamp = new Date(start.getTime() + index * stepHours * 60 * 60 * 1000);
-        const increment = consumptionIncrement(device, index, stepHours);
+        const increment = consumptionIncrement(device, timestamp, stepHours);
         cumulative += increment;
 
-        const voltage = readingVoltage(device, index);
+        const voltage = readingVoltage(device, timestamp);
         const current = readingCurrent(device, increment, stepHours);
 
         const point = new Point("meter_reading")

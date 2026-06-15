@@ -236,7 +236,7 @@ func (s *Simulator) SetDevice(device *dev.Device, update bool) (int, int, error)
 
 	} else {
 
-		if s.Devices[device.Id].IsOn() {
+		if s.State == util.Running && s.Devices[device.Id].IsOn() {
 			return codes.CodeErrorDeviceActive, -1, errors.New("Device is running, unable update")
 		}
 

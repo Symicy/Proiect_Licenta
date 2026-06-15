@@ -1,3 +1,10 @@
 # Playwright CLI artifacts
 /.playwright-cli/
 /output/playwright/
+
+# Python virtual environments
+/forecast-service/.venv/
+__pycache__/
+.pytest_cache/
+
+/figures

@@ -2,7 +2,6 @@
 
 import {
   Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -12,6 +11,8 @@ import {
   Line,
   Pie,
   PieChart,
+  ReferenceArea,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -46,6 +47,7 @@ export type MeterSeriesPoint = {
   timestamp: string;
   label: string;
   consumption: number;
+  average: number | null;
 };
 
 export type ForecastSeriesPoint = {
@@ -239,13 +241,7 @@ export function MeterAreaChart({ data, unitLabel }: { data: MeterSeriesPoint[]; 
   return (
     <div className="h-80">
       <ResponsiveContainer {...RESPONSIVE_CHART_PROPS}>
-        <AreaChart data={data} margin={{ top: 10, right: 10, left: -12, bottom: 0 }}>
-          <defs>
-            <linearGradient id="meterConsumptionGradient" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#c0c1ff" stopOpacity={0.45} />
-              <stop offset="100%" stopColor="#c0c1ff" stopOpacity={0.03} />
-            </linearGradient>
-          </defs>
+        <ComposedChart data={data} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
           <CartesianGrid stroke={GRID_COLOR} vertical={false} />
           <XAxis
             dataKey="label"
@@ -264,24 +260,44 @@ export function MeterAreaChart({ data, unitLabel }: { data: MeterSeriesPoint[]; 
               return (
                 <div className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 py-2 text-xs shadow-xl">
                   <p className="font-semibold text-on-surface">{label}</p>
-                  <p className="mt-1 font-mono text-on-surface">
-                    {formatQuantity(Number(payload[0]?.value))} {unitLabel}
-                  </p>
+                  <div className="mt-1 space-y-1">
+                    {payload.map((item) => {
+                      if (item.value === null || item.value === undefined) {
+                        return null;
+                      }
+
+                      return (
+                        <p key={`${item.name}-${item.dataKey}`} className="flex items-center gap-2 text-on-surface-variant">
+                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color ?? "#c0c1ff" }} />
+                          <span>{item.name}: </span>
+                          <span className="font-mono text-on-surface">
+                            {formatQuantity(Number(item.value))} {unitLabel}
+                          </span>
+                        </p>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             }}
           />
-          <Area
-            type="monotone"
+          <Legend wrapperStyle={{ color: AXIS_COLOR, fontSize: 12 }} />
+          <Bar
             dataKey="consumption"
-            name="Consumption"
+            name="Daily consumption"
+            fill="#38bdf8"
+            radius={[4, 4, 0, 0]}
+          />
+          <Line
+            type="monotone"
+            dataKey="average"
+            name="7-day average"
             stroke="#c0c1ff"
             strokeWidth={3}
-            fill="url(#meterConsumptionGradient)"
             dot={false}
             activeDot={{ r: 4, fill: PANEL_TEXT }}
           />
-        </AreaChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
@@ -304,6 +320,23 @@ export function ForecastComparisonChart({ data, unitLabel }: { data: ForecastSer
             </linearGradient>
           </defs>
           <CartesianGrid stroke={GRID_COLOR} vertical={false} />
+          {data.some((point) => point.predicted !== null) ? (
+            <ReferenceArea
+              x1={data.find((point) => point.predicted !== null)?.label}
+              x2={data.at(-1)?.label}
+              fill="#c0c1ff"
+              fillOpacity={0.08}
+              strokeOpacity={0}
+            />
+          ) : null}
+          {data.some((point) => point.predicted !== null) ? (
+            <ReferenceLine
+              x={data.find((point) => point.predicted !== null)?.label}
+              stroke="rgba(218, 226, 253, 0.55)"
+              strokeDasharray="3 3"
+              label={{ value: "Now", position: "insideTop", fill: AXIS_COLOR, fontSize: 12 }}
+            />
+          ) : null}
           <XAxis
             dataKey="label"
             minTickGap={28}

@@ -10,7 +10,7 @@
 			"name": "Electricity Meter 01",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "7E05F126",
+				"payload": "5RAHKQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -35,8 +35,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6455428,
-				"longitude": 23.5466119,
+				"latitude": 47.6507928,
+				"longitude": 23.5445119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -80,7 +80,7 @@
 			"name": "Electricity Meter 02",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "D620427C",
+				"payload": "5xEGfQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -105,8 +105,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6455428,
-				"longitude": 23.5478119,
+				"latitude": 47.6507928,
+				"longitude": 23.5457119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -150,7 +150,7 @@
 			"name": "Gas Meter 01",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "5661640F",
+				"payload": "JAACiA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -175,8 +175,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6503428,
-				"longitude": 23.5506119,
+				"latitude": 47.6555928,
+				"longitude": 23.5485119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -220,7 +220,7 @@
 			"name": "Gas Meter 02",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "BD56C4EA",
+				"payload": "JAAC1Q==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -245,8 +245,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6503428,
-				"longitude": 23.5518119,
+				"latitude": 47.6555928,
+				"longitude": 23.5497119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -290,7 +290,7 @@
 			"name": "Gas Meter 03",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "99A88132",
+				"payload": "JQACdw==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -315,8 +315,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6503428,
-				"longitude": 23.5530119,
+				"latitude": 47.6555928,
+				"longitude": 23.5509119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -360,7 +360,7 @@
 			"name": "Gas Meter 04",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "DE5F881C",
+				"payload": "JAACKQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -385,8 +385,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6503428,
-				"longitude": 23.5542119,
+				"latitude": 47.6555928,
+				"longitude": 23.5521119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -430,7 +430,7 @@
 			"name": "Gas Meter 05",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "FCBD3284",
+				"payload": "IwACtg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -455,8 +455,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6503428,
-				"longitude": 23.5554119,
+				"latitude": 47.6555928,
+				"longitude": 23.5533119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -500,7 +500,7 @@
 			"name": "Gas Meter 06",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "8423E7A7",
+				"payload": "JAACzw==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -525,8 +525,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6518428,
-				"longitude": 23.5506119,
+				"latitude": 47.6570928,
+				"longitude": 23.5485119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -570,7 +570,7 @@
 			"name": "Gas Meter 07",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "6FA584F3",
+				"payload": "JQAC6A==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -595,8 +595,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6518428,
-				"longitude": 23.5518119,
+				"latitude": 47.6570928,
+				"longitude": 23.5497119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -640,7 +640,7 @@
 			"name": "Gas Meter 08",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C07A78E6",
+				"payload": "IwACYg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -665,8 +665,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6518428,
-				"longitude": 23.5530119,
+				"latitude": 47.6570928,
+				"longitude": 23.5509119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -710,7 +710,7 @@
 			"name": "Gas Meter 09",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "7E224486",
+				"payload": "JQACbg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -735,8 +735,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6518428,
-				"longitude": 23.5542119,
+				"latitude": 47.6570928,
+				"longitude": 23.5521119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -780,7 +780,7 @@
 			"name": "Gas Meter 10",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "A1F8DCF4",
+				"payload": "JQAC9Q==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -805,8 +805,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6518428,
-				"longitude": 23.5554119,
+				"latitude": 47.6570928,
+				"longitude": 23.5533119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -850,7 +850,7 @@
 			"name": "Electricity Meter 03",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "B9420707",
+				"payload": "5RMHbA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -875,8 +875,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6455428,
-				"longitude": 23.5490119,
+				"latitude": 47.6507928,
+				"longitude": 23.5469119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -920,7 +920,7 @@
 			"name": "Water Meter 01",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "29CB1D44",
+				"payload": "IwAAfg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -945,8 +945,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6410428,
-				"longitude": 23.5511119,
+				"latitude": 47.6462928,
+				"longitude": 23.5490119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -990,7 +990,7 @@
 			"name": "Water Meter 02",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "88D03E1E",
+				"payload": "JAAA1g==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1015,8 +1015,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6410428,
-				"longitude": 23.5523119,
+				"latitude": 47.6462928,
+				"longitude": 23.5502119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1060,7 +1060,7 @@
 			"name": "Water Meter 03",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "DA60EEE5",
+				"payload": "IwAAgQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1085,8 +1085,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6410428,
-				"longitude": 23.5535119,
+				"latitude": 47.6462928,
+				"longitude": 23.5514119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1130,7 +1130,7 @@
 			"name": "Water Meter 04",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "98FD9DB3",
+				"payload": "IwAAjQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1155,8 +1155,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6410428,
-				"longitude": 23.5547119,
+				"latitude": 47.6462928,
+				"longitude": 23.5526119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1200,7 +1200,7 @@
 			"name": "Water Meter 05",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "FDADE735",
+				"payload": "JAAAwg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1225,8 +1225,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6410428,
-				"longitude": 23.5559119,
+				"latitude": 47.6462928,
+				"longitude": 23.5538119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1270,7 +1270,7 @@
 			"name": "Water Meter 06",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "BE671212",
+				"payload": "JAAA7Q==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1295,8 +1295,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6425428,
-				"longitude": 23.5511119,
+				"latitude": 47.6477928,
+				"longitude": 23.5490119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1340,7 +1340,7 @@
 			"name": "Water Meter 07",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "F1BCEE88",
+				"payload": "JAAAfQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1365,8 +1365,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6425428,
-				"longitude": 23.5523119,
+				"latitude": 47.6477928,
+				"longitude": 23.5502119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1410,7 +1410,7 @@
 			"name": "Water Meter 08",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "A3B63BB7",
+				"payload": "JAAAtg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1435,8 +1435,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6425428,
-				"longitude": 23.5535119,
+				"latitude": 47.6477928,
+				"longitude": 23.5514119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1480,7 +1480,7 @@
 			"name": "Water Meter 09",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "1192958A",
+				"payload": "JAAAkg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1505,8 +1505,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6425428,
-				"longitude": 23.5547119,
+				"latitude": 47.6477928,
+				"longitude": 23.5526119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1550,7 +1550,7 @@
 			"name": "Water Meter 10",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "799DE02E",
+				"payload": "IwAAvA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1575,8 +1575,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6425428,
-				"longitude": 23.5559119,
+				"latitude": 47.6477928,
+				"longitude": 23.5538119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1620,7 +1620,7 @@
 			"name": "Electricity Meter 04",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "55CA89D2",
+				"payload": "5RMGwg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1645,8 +1645,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6455428,
-				"longitude": 23.5502119,
+				"latitude": 47.6507928,
+				"longitude": 23.5481119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1690,7 +1690,7 @@
 			"name": "Heating Meter 01",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "FAA9B37D",
+				"payload": "5w4Gjg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1715,8 +1715,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6500428,
-				"longitude": 23.5421119,
+				"latitude": 47.6552928,
+				"longitude": 23.5400119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1760,7 +1760,7 @@
 			"name": "Heating Meter 02",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "206E5662",
+				"payload": "5woFZQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1785,8 +1785,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6500428,
-				"longitude": 23.5433119,
+				"latitude": 47.6552928,
+				"longitude": 23.5412119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1830,7 +1830,7 @@
 			"name": "Heating Meter 03",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "9DF7C695",
+				"payload": "5wwEtQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1855,8 +1855,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6500428,
-				"longitude": 23.5445119,
+				"latitude": 47.6552928,
+				"longitude": 23.5424119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1900,7 +1900,7 @@
 			"name": "Heating Meter 04",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "4EF4B995",
+				"payload": "5Q4GjA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1925,8 +1925,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6500428,
-				"longitude": 23.5457119,
+				"latitude": 47.6552928,
+				"longitude": 23.5436119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -1970,7 +1970,7 @@
 			"name": "Heating Meter 05",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "4EDB9CE1",
+				"payload": "5w4FEg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -1995,8 +1995,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6500428,
-				"longitude": 23.5469119,
+				"latitude": 47.6552928,
+				"longitude": 23.5448119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2040,7 +2040,7 @@
 			"name": "Heating Meter 06",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "581DFFFB",
+				"payload": "5Q8G0A==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2065,8 +2065,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5421119,
+				"latitude": 47.6567928,
+				"longitude": 23.5400119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2110,7 +2110,7 @@
 			"name": "Heating Meter 07",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "7EFB98D0",
+				"payload": "5QwGRA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2135,8 +2135,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5433119,
+				"latitude": 47.6567928,
+				"longitude": 23.5412119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2180,7 +2180,7 @@
 			"name": "Heating Meter 08",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "9F17F1A7",
+				"payload": "5gwFxg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2205,8 +2205,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5445119,
+				"latitude": 47.6567928,
+				"longitude": 23.5424119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2250,7 +2250,7 @@
 			"name": "Heating Meter 09",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "0D69E7F4",
+				"payload": "5w0FUA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2275,8 +2275,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5457119,
+				"latitude": 47.6567928,
+				"longitude": 23.5436119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2320,7 +2320,7 @@
 			"name": "Heating Meter 10",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "5C0AA8ED",
+				"payload": "5g0F1g==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2345,8 +2345,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5469119,
+				"latitude": 47.6567928,
+				"longitude": 23.5448119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2390,7 +2390,7 @@
 			"name": "Electricity Meter 05",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "1B42684B",
+				"payload": "5g8HGQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2415,8 +2415,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6455428,
-				"longitude": 23.5514119,
+				"latitude": 47.6507928,
+				"longitude": 23.5493119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2460,7 +2460,7 @@
 			"name": "Cooling Meter 01",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "6C09B8E7",
+				"payload": "5g4EeA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2485,8 +2485,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6407428,
-				"longitude": 23.5426119,
+				"latitude": 47.6459928,
+				"longitude": 23.5405119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2530,7 +2530,7 @@
 			"name": "Cooling Meter 02",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "A9D4CD23",
+				"payload": "5gwEyg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2555,8 +2555,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6407428,
-				"longitude": 23.5438119,
+				"latitude": 47.6459928,
+				"longitude": 23.5417119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2600,7 +2600,7 @@
 			"name": "Cooling Meter 03",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "5851266C",
+				"payload": "5xEEPQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2625,8 +2625,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6407428,
-				"longitude": 23.5450119,
+				"latitude": 47.6459928,
+				"longitude": 23.5429119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2670,7 +2670,7 @@
 			"name": "Cooling Meter 04",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "085F4B54",
+				"payload": "5hAFMA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2695,8 +2695,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6407428,
-				"longitude": 23.5462119,
+				"latitude": 47.6459928,
+				"longitude": 23.5441119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2740,7 +2740,7 @@
 			"name": "Cooling Meter 05",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "93CF72F8",
+				"payload": "5w0EeA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2765,8 +2765,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6407428,
-				"longitude": 23.5474119,
+				"latitude": 47.6459928,
+				"longitude": 23.5453119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2810,7 +2810,7 @@
 			"name": "Cooling Meter 06",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "5B1A11B7",
+				"payload": "5Q4Fpg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2835,8 +2835,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6422428,
-				"longitude": 23.5426119,
+				"latitude": 47.6474928,
+				"longitude": 23.5405119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2880,7 +2880,7 @@
 			"name": "Cooling Meter 07",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "2C3EF7F7",
+				"payload": "5g4EIw==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2905,8 +2905,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6422428,
-				"longitude": 23.5438119,
+				"latitude": 47.6474928,
+				"longitude": 23.5417119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2950,7 +2950,7 @@
 			"name": "Cooling Meter 08",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C6C7C06D",
+				"payload": "5g0EEw==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2975,8 +2975,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6422428,
-				"longitude": 23.5450119,
+				"latitude": 47.6474928,
+				"longitude": 23.5429119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3020,7 +3020,7 @@
 			"name": "Cooling Meter 09",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "D0DC6BC1",
+				"payload": "5Q0EIA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3045,8 +3045,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6422428,
-				"longitude": 23.5462119,
+				"latitude": 47.6474928,
+				"longitude": 23.5441119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3090,7 +3090,7 @@
 			"name": "Cooling Meter 10",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C83E99B0",
+				"payload": "5RAE1g==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3115,8 +3115,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6422428,
-				"longitude": 23.5474119,
+				"latitude": 47.6474928,
+				"longitude": 23.5453119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3160,7 +3160,7 @@
 			"name": "Electricity Meter 06",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "FC0BF2CB",
+				"payload": "5xEHHg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3185,8 +3185,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5466119,
+				"latitude": 47.6522928,
+				"longitude": 23.5445119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3230,7 +3230,7 @@
 			"name": "Electricity Meter 07",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "97039A90",
+				"payload": "5RUGSA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3255,8 +3255,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5478119,
+				"latitude": 47.6522928,
+				"longitude": 23.5457119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3300,7 +3300,7 @@
 			"name": "Electricity Meter 08",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "2E1E83EC",
+				"payload": "5xgHJg==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3325,8 +3325,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5490119,
+				"latitude": 47.6522928,
+				"longitude": 23.5469119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3370,7 +3370,7 @@
 			"name": "Electricity Meter 09",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "4DCD1AC6",
+				"payload": "5RIFgQ==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3395,8 +3395,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5502119,
+				"latitude": 47.6522928,
+				"longitude": 23.5481119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3440,7 +3440,7 @@
 			"name": "Electricity Meter 10",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "9E09C084",
+				"payload": "5hcGiA==",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3465,8 +3465,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5514119,
+				"latitude": 47.6522928,
+				"longitude": 23.5493119,
 				"altitude": 0
 			},
 			"rxs": [

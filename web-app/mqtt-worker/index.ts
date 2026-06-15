@@ -36,6 +36,7 @@ type DecodedUplinkObject = {
 type ChirpStackUplinkPayload = {
   deviceInfo?: {
     devEui?: string;
+    tags?: Record<string, string>;
   };
   object?: DecodedUplinkObject;
 };
@@ -84,13 +85,15 @@ function resolveConsumption(decodedData: DecodedUplinkObject) {
   ]);
 }
 
-function resolveUtilityType(decodedData: DecodedUplinkObject) {
+function resolveUtilityType(decodedData: DecodedUplinkObject, deviceTags?: Record<string, string>) {
   const rawValue =
     typeof decodedData.utilityType === "string"
       ? decodedData.utilityType
       : typeof decodedData.meterType === "string"
         ? decodedData.meterType
-        : null;
+        : typeof deviceTags?.utilityType === "string"
+          ? deviceTags.utilityType
+          : null;
 
   if (!rawValue) {
     return null;
@@ -142,7 +145,7 @@ mqttClient.on("message", (_topic: string, message: Buffer) => {
     }
 
     const point = new Point("meter_reading").tag("devEui", devEui);
-    const utilityType = resolveUtilityType(decodedData);
+    const utilityType = resolveUtilityType(decodedData, payload.deviceInfo?.tags);
     if (utilityType) {
       point.tag("utilityType", utilityType);
     }

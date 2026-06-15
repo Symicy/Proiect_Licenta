@@ -282,18 +282,50 @@ function toMeterSeries(readings: MeterReading[]): MeterSeriesPoint[] {
   const formatter = new Intl.DateTimeFormat("en-GB", {
     month: "short",
     day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
     hour12: false,
   });
 
-  return readings
+  const validReadings = readings
     .filter((reading) => reading.consumption !== null && Number.isFinite(reading.consumption))
-    .map((reading) => ({
+    .sort((first, second) => Date.parse(first.timestamp) - Date.parse(second.timestamp));
+
+  const dailyTotals = new Map<string, MeterSeriesPoint>();
+
+  validReadings.slice(1).forEach((reading, index) => {
+    const previous = validReadings[index]?.consumption ?? reading.consumption ?? 0;
+    const current = reading.consumption ?? previous;
+    const timestamp = new Date(reading.timestamp);
+    const key = timestamp.toISOString().slice(0, 10);
+    const existing = dailyTotals.get(key);
+    const consumption = Math.max(current - previous, 0);
+
+    if (existing) {
+      existing.consumption += consumption;
+      return;
+    }
+
+    dailyTotals.set(key, {
       timestamp: reading.timestamp,
-      label: formatter.format(new Date(reading.timestamp)),
-      consumption: reading.consumption ?? 0,
-    }));
+      label: formatter.format(timestamp),
+      consumption,
+      average: null,
+    });
+  });
+
+  const dailySeries = [...dailyTotals.values()].sort(
+    (first, second) => Date.parse(first.timestamp) - Date.parse(second.timestamp),
+  );
+
+  return dailySeries.map((point, index) => {
+    const window = dailySeries.slice(Math.max(0, index - 6), index + 1);
+    const average = window.reduce((sum, item) => sum + item.consumption, 0) / window.length;
+
+    return {
+      ...point,
+      consumption: Number(point.consumption.toFixed(4)),
+      average: Number(average.toFixed(4)),
+    };
+  });
 }
 
 function toForecastSeries(forecast: ForecastResponse | null): ForecastSeriesPoint[] {
@@ -309,25 +341,48 @@ function toForecastSeries(forecast: ForecastResponse | null): ForecastSeriesPoin
     hour12: false,
   });
 
-  const observed: ForecastSeriesPoint[] = forecast.observed
+  const stepMs = forecast.query.stepHours * 60 * 60 * 1000;
+  const visibleObservedStart = Date.parse(forecast.query.stop) - 72 * 60 * 60 * 1000;
+  const observedReadings = forecast.observed
     .filter((reading) => reading.consumption !== null && Number.isFinite(reading.consumption))
-    .map((reading) => ({
+    .sort((first, second) => Date.parse(first.timestamp) - Date.parse(second.timestamp));
+  const visibleObservedReadings = observedReadings.filter(
+    (reading) => Date.parse(reading.timestamp) >= visibleObservedStart - stepMs,
+  );
+
+  const observed: ForecastSeriesPoint[] = visibleObservedReadings.slice(1).flatMap((reading, index) => {
+    const previous = visibleObservedReadings[index]?.consumption ?? reading.consumption ?? 0;
+    const current = reading.consumption ?? previous;
+    if (Date.parse(reading.timestamp) < visibleObservedStart) {
+      return [];
+    }
+
+    return [{
       timestamp: reading.timestamp,
       label: formatter.format(new Date(reading.timestamp)),
-      observed: reading.consumption ?? null,
+      observed: Number(Math.max(current - previous, 0).toFixed(4)),
       predicted: null,
       lower: null,
       upper: null,
-    }));
+    }];
+  });
+
+  let previousForecastBase = observedReadings.at(-1)?.consumption ?? null;
+  const forecastPoints: ForecastSeriesPoint[] = forecast.forecast.map((point) => {
+    const previous = previousForecastBase ?? point.value;
+    previousForecastBase = point.value;
+
+    return {
+      timestamp: point.timestamp,
+      label: formatter.format(new Date(point.timestamp)),
+      observed: null,
+      predicted: Number(Math.max(point.value - previous, 0).toFixed(4)),
+      lower: point.lower === null ? null : Number(Math.max(point.lower - previous, 0).toFixed(4)),
+      upper: point.upper === null ? null : Number(Math.max(point.upper - previous, 0).toFixed(4)),
+    };
+  });
+
   const lastObserved = observed.at(-1);
-  const forecastPoints: ForecastSeriesPoint[] = forecast.forecast.map((point) => ({
-    timestamp: point.timestamp,
-    label: formatter.format(new Date(point.timestamp)),
-    observed: null,
-    predicted: point.value,
-    lower: point.lower,
-    upper: point.upper,
-  }));
 
   if (lastObserved && forecastPoints.length > 0) {
     forecastPoints.unshift({
@@ -1379,17 +1434,17 @@ export function MeterView({ controller }: ViewProps) {
           </div>
 
           <Panel>
-            <SectionHeader title={tr("Consumption Profile")} subtitle={tr("Recent consumption trend for the selected meter.")} eyebrow={tr("30-day telemetry")} />
+            <SectionHeader title={tr("Consumption Profile")} subtitle={tr("Daily aggregated consumption for the selected meter.")} eyebrow={tr("30-day daily totals")} />
             <div className="mt-5 rounded-lg bg-surface-container-low p-3">
-              <MeterAreaChart data={meterSeries} unitLabel={selectedDevice.unitLabel} />
+              <MeterAreaChart data={meterSeries} unitLabel={`${selectedDevice.unitLabel}/day`} />
             </div>
           </Panel>
 
           <Panel>
             <SectionHeader
               title={tr("ARIMA Forecast")}
-              subtitle={tr("Observed history against the predicted short-term consumption index.")}
-              eyebrow={tr("Next 24 hours")}
+              subtitle={tr("Observed interval consumption against the predicted short-term consumption.")}
+              eyebrow={tr("Last 72 hours / next 24 hours")}
             />
 
             <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -1415,7 +1470,7 @@ export function MeterView({ controller }: ViewProps) {
             ) : null}
 
             <div className="mt-5 rounded-lg bg-surface-container-low p-3">
-              <ForecastComparisonChart data={forecastSeries} unitLabel={selectedDevice.unitLabel} />
+              <ForecastComparisonChart data={forecastSeries} unitLabel={`${selectedDevice.unitLabel}/3h`} />
             </div>
           </Panel>
         </div>

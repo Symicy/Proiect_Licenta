@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "crypto";
 import { config as loadEnv } from "dotenv";
 import bcrypt from "bcryptjs";
 import pg from "pg";
+import { encodeSmartMeterPayload } from "./demo-telemetry-profile.mjs";
 
 loadEnv({ path: new URL("../.env", import.meta.url) });
 
@@ -14,6 +15,7 @@ const APP_DATABASE_URL = process.env.DATABASE_URL;
 const CHIRPSTACK_DATABASE_URL =
   process.env.CHIRPSTACK_DATABASE_URL ??
   "postgresql://admin:secretpassword@localhost:5432/chirpstack?sslmode=disable";
+const SIMULATOR_CONTROL_TIMEOUT_MS = 15000;
 
 const DEMO_PASSWORD = "Demo12345!";
 const COMPANY_CLAIM_CODE = "COMPANY-DEMO-2026";
@@ -158,6 +160,45 @@ async function fetchSimulatorGateways() {
   }
 
   return gateways;
+}
+
+async function fetchSimulatorStatus() {
+  const response = await fetch(`${SIMULATOR_API_URL}/api/status`);
+  if (!response.ok) {
+    throw new Error(`LWN Simulator returned ${response.status} while reading status.`);
+  }
+
+  return Boolean(await response.json());
+}
+
+async function setSimulatorRunning(shouldRun) {
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), SIMULATOR_CONTROL_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await fetch(`${SIMULATOR_API_URL}/api/${shouldRun ? "start" : "stop"}`, {
+      signal: abortController.signal,
+    });
+  } catch (error) {
+    if (!shouldRun && error instanceof Error && error.name === "AbortError") {
+      const isRunning = await fetchSimulatorStatus();
+      if (!isRunning) {
+        return true;
+      }
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to ${shouldRun ? "start" : "stop"} LWN Simulator: ${response.status} ${text}`);
+  }
+
+  return Boolean(await response.json());
 }
 
 async function ensureSimulatorBridgeAddress() {
@@ -332,6 +373,26 @@ async function postSimulatorDevice(deviceBody) {
   }
 }
 
+async function updateSimulatorDevice(deviceBody) {
+  const response = await fetch(`${SIMULATOR_API_URL}/api/up-device`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(deviceBody),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to update ${deviceBody.info.devEUI} in LWN Simulator: ${response.status} ${text}`);
+  }
+
+  const result = await response.json();
+  if (result?.code !== 0) {
+    throw new Error(`LWN Simulator rejected update for ${deviceBody.info.devEUI}: ${JSON.stringify(result)}`);
+  }
+}
+
 async function resolveChirpStackTargets(chirpStackPool) {
   const applicationName = process.env.CHIRPSTACK_APPLICATION_NAME ?? "Monitorizare_Energie";
   const profileName = process.env.CHIRPSTACK_DEVICE_PROFILE_NAME ?? "Profil_SmartMeter";
@@ -406,7 +467,6 @@ function buildDemoDevices(baseLatitude, baseLongitude) {
         nwkSKey: hashHex(`nwk-s-key:${seed}`, 32),
         appSKey: hashHex(`app-s-key:${seed}`, 32),
         appKey: hashHex(`app-key:${seed}`, 32),
-        payload: hashHex(`payload:${seed}`, 8).toUpperCase(),
         name: `${utilityDefinition.label} Meter ${String(ordinal).padStart(2, "0")}`,
         utilityType: utilityDefinition.type,
         unitLabel: utilityDefinition.unit,
@@ -419,6 +479,7 @@ function buildDemoDevices(baseLatitude, baseLongitude) {
         claimCodeHash: hashClaimCode(claimCode),
         claimCodeLabel: companyOwned ? "Company demo fleet" : `${owner.firstName} ${owner.lastName}`,
       });
+      devices[devices.length - 1].payload = encodeSmartMeterPayload(devices[devices.length - 1]);
     }
   }
 
@@ -565,6 +626,7 @@ async function main() {
 
   const appPool = new Pool({ connectionString: APP_DATABASE_URL });
   const chirpStackPool = new Pool({ connectionString: CHIRPSTACK_DATABASE_URL });
+  let shouldRestartSimulator = false;
 
   try {
     const simulatorDevices = await fetchSimulatorDevices();
@@ -575,13 +637,18 @@ async function main() {
     const baseLongitude = Number(templateLocation.longitude ?? DEFAULT_BASE_LONGITUDE);
     await ensureSimulatorBridgeAddress();
     const gatewaysCreated = await ensureSimulatorGateway(simulatorGateways, baseLatitude, baseLongitude);
+    const simulatorWasRunning = await fetchSimulatorStatus();
+    if (simulatorWasRunning) {
+      await setSimulatorRunning(false);
+      shouldRestartSimulator = true;
+    }
+
     const nextLwnId =
       simulatorDevices.reduce((maxId, device) => Math.max(maxId, Number(device.id) || 0), 0) + 1;
-    const existingSimulatorDevEuis = new Set(
+    const existingSimulatorDeviceByDevEui = new Map(
       simulatorDevices
-        .map((device) => device?.info?.devEUI)
-        .filter((devEui) => typeof devEui === "string")
-        .map((devEui) => devEui.toLowerCase()),
+        .filter((device) => typeof device?.info?.devEUI === "string")
+        .map((device) => [device.info.devEUI.toLowerCase(), device]),
     );
 
     const targets = await resolveChirpStackTargets(chirpStackPool);
@@ -593,11 +660,21 @@ async function main() {
 
     const demoDevices = buildDemoDevices(baseLatitude, baseLongitude);
     let lwnCreated = 0;
+    let lwnUpdated = 0;
 
-    for (const [index, device] of demoDevices.entries()) {
-      if (!existingSimulatorDevEuis.has(device.devEui)) {
+    for (const device of demoDevices) {
+      const existingSimulatorDevice = existingSimulatorDeviceByDevEui.get(device.devEui.toLowerCase());
+      if (existingSimulatorDevice) {
         const lwnDevice = buildLwnDevice({
-          id: nextLwnId + index,
+          id: Number(existingSimulatorDevice.id),
+          template,
+          device,
+        });
+        await updateSimulatorDevice(lwnDevice);
+        lwnUpdated += 1;
+      } else {
+        const lwnDevice = buildLwnDevice({
+          id: nextLwnId + lwnCreated,
           template,
           device,
         });
@@ -611,13 +688,18 @@ async function main() {
 
     console.log(`Provisioned ${demoDevices.length} demo devices.`);
     console.log(`Added ${gatewaysCreated} default gateway to LWN Simulator.`);
-    console.log(`Added ${lwnCreated} new devices to LWN Simulator; existing generated devices were skipped.`);
+    console.log(`Added ${lwnCreated} new devices to LWN Simulator; updated ${lwnUpdated} existing devices.`);
     console.log("Demo accounts:");
     console.log(`- company.demo@example.com / ${DEMO_PASSWORD} / ${COMPANY_CLAIM_CODE}`);
     console.log(`- user1.demo@example.com / ${DEMO_PASSWORD} / ${USER_CLAIM_CODES[0]}`);
     console.log(`- user2.demo@example.com / ${DEMO_PASSWORD} / ${USER_CLAIM_CODES[1]}`);
     console.log(`- user3.demo@example.com / ${DEMO_PASSWORD} / ${USER_CLAIM_CODES[2]}`);
   } finally {
+    if (shouldRestartSimulator) {
+      await setSimulatorRunning(true).catch((error) => {
+        console.error("Failed to restart LWN Simulator after provisioning:", error);
+      });
+    }
     await appPool.end();
     await chirpStackPool.end();
   }

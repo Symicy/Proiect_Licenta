@@ -213,11 +213,16 @@ const ROMANIAN_PHRASES: Record<string, string> = {
   "This Month": "Luna aceasta",
   "Consumption Profile": "Profil consum",
   "Recent consumption trend for the selected meter.": "Tendinta recenta de consum pentru contorul selectat.",
+  "Daily aggregated consumption for the selected meter.": "Consum zilnic agregat pentru contorul selectat.",
   "30-day telemetry": "Telemetrie 30 zile",
+  "30-day daily totals": "Totaluri zilnice 30 zile",
   "ARIMA Forecast": "Prognoza ARIMA",
   "Observed history against the predicted short-term consumption index.":
     "Istoric observat comparat cu indicele de consum prognozat pe termen scurt.",
+  "Observed interval consumption against the predicted short-term consumption.":
+    "Consum observat pe interval comparat cu prognoza de consum pe termen scurt.",
   "Next 24 hours": "Urmatoarele 24 ore",
+  "Last 72 hours / next 24 hours": "Ultimele 72 ore / urmatoarele 24 ore",
   Horizon: "Orizont",
   Step: "Pas",
   "ARIMA Order": "Ordin ARIMA",
