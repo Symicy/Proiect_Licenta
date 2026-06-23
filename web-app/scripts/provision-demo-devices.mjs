@@ -25,6 +25,7 @@ const USER_CLAIM_CODES = [
   "USER3-DEMO-2026",
 ];
 const DEFAULT_GATEWAY_MAC = "a1b2c3d4e5f67890";
+const DEFAULT_GATEWAY_NAME = "Gateway_Licenta";
 const DEFAULT_BASE_LATITUDE = 47.6462928;
 const DEFAULT_BASE_LONGITUDE = 23.5490119;
 const DEFAULT_LWN_RXS = [
@@ -370,7 +371,7 @@ function buildDefaultGateway(id, latitude, longitude) {
     info: {
       active: true,
       typeGateway: false,
-      name: "Gateway_Licenta",
+      name: DEFAULT_GATEWAY_NAME,
       macAddress: DEFAULT_GATEWAY_MAC,
       location: {
         latitude,
@@ -414,6 +415,43 @@ async function ensureSimulatorGateway(gateways, latitude, longitude) {
   }
 
   return 1;
+}
+
+async function ensureChirpStackGateway(chirpStackPool, tenantId, latitude, longitude) {
+  await chirpStackPool.query(
+    `
+      INSERT INTO gateway (
+        gateway_id, tenant_id, created_at, updated_at, last_seen_at, name, description,
+        latitude, longitude, altitude, stats_interval_secs, tls_certificate, tags, properties
+      )
+      VALUES (
+        decode($1, 'hex'), $2::uuid, NOW(), NOW(), NULL, $3, $4,
+        $5, $6, 0, 30, NULL, $7::jsonb, $8::jsonb
+      )
+      ON CONFLICT (gateway_id)
+      DO UPDATE SET
+        tenant_id = EXCLUDED.tenant_id,
+        updated_at = NOW(),
+        name = EXCLUDED.name,
+        description = EXCLUDED.description,
+        latitude = EXCLUDED.latitude,
+        longitude = EXCLUDED.longitude,
+        altitude = EXCLUDED.altitude,
+        stats_interval_secs = EXCLUDED.stats_interval_secs,
+        tags = EXCLUDED.tags,
+        properties = EXCLUDED.properties
+    `,
+    [
+      DEFAULT_GATEWAY_MAC,
+      tenantId,
+      DEFAULT_GATEWAY_NAME,
+      "Gateway provisioned for the WattWise thesis demo and used by LWN Simulator.",
+      latitude,
+      longitude,
+      JSON.stringify({ app: "wattwise", demoFleet: "true" }),
+      JSON.stringify({ region_config_id: "eu868", region_common_name: "EU868" }),
+    ],
+  );
 }
 
 function buildDefaultLwnTemplate(latitude, longitude) {
@@ -628,7 +666,7 @@ async function resolveChirpStackTargets(chirpStackPool) {
   const profileName = process.env.CHIRPSTACK_DEVICE_PROFILE_NAME ?? "Profil_SmartMeter";
 
   const applicationResult = await chirpStackPool.query(
-    "SELECT id FROM application WHERE name = $1 ORDER BY created_at DESC LIMIT 1",
+    "SELECT id, tenant_id FROM application WHERE name = $1 ORDER BY created_at DESC LIMIT 1",
     [applicationName],
   );
   const profileResult = await chirpStackPool.query(
@@ -637,15 +675,16 @@ async function resolveChirpStackTargets(chirpStackPool) {
   );
 
   const applicationId = applicationResult.rows[0]?.id;
+  const tenantId = applicationResult.rows[0]?.tenant_id;
   const baseDeviceProfileId = profileResult.rows[0]?.id;
 
-  if (!applicationId || !baseDeviceProfileId) {
+  if (!applicationId || !tenantId || !baseDeviceProfileId) {
     throw new Error(`Could not find ChirpStack application "${applicationName}" and profile "${profileName}".`);
   }
 
   const profileIdsByUtility = await ensureChirpStackDeviceProfiles(chirpStackPool, baseDeviceProfileId);
 
-  return { applicationId, baseDeviceProfileId, profileIdsByUtility };
+  return { applicationId, tenantId, baseDeviceProfileId, profileIdsByUtility };
 }
 
 async function upsertDemoUser(appPool, demoUser) {
@@ -885,6 +924,8 @@ async function main() {
     );
 
     const targets = await resolveChirpStackTargets(chirpStackPool);
+    await ensureChirpStackGateway(chirpStackPool, targets.tenantId, baseLatitude, baseLongitude);
+
     const ownerByEmail = new Map();
     for (const demoUser of DEMO_USERS) {
       const user = await upsertDemoUser(appPool, demoUser);
@@ -921,6 +962,7 @@ async function main() {
 
     console.log(`Provisioned ${demoDevices.length} demo devices.`);
     console.log(`Added ${gatewaysCreated} default gateway to LWN Simulator.`);
+    console.log(`Ensured ChirpStack gateway ${DEFAULT_GATEWAY_MAC} (${DEFAULT_GATEWAY_NAME}).`);
     console.log(`Added ${lwnCreated} new devices to LWN Simulator; updated ${lwnUpdated} existing devices.`);
     console.log("Demo accounts:");
     console.log(`- company.demo@example.com / ${DEMO_PASSWORD} / ${COMPANY_CLAIM_CODE}`);
