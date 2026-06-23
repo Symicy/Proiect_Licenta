@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { latLngBounds } from "leaflet";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 
@@ -27,6 +27,7 @@ type FitBoundsControllerProps = {
   devices: DeviceWithCoordinates[];
   defaultCenter: [number, number];
   defaultZoom: number;
+  resetViewSignal: number;
 };
 
 const MAP_MARKER_COLORS: Record<UtilityType, string> = {
@@ -46,23 +47,70 @@ function FitBoundsController({
   devices,
   defaultCenter,
   defaultZoom,
+  resetViewSignal,
 }: FitBoundsControllerProps) {
   const map = useMap();
+  const fittingRef = useRef(false);
+  const userInteractedRef = useRef(false);
+  const lastFitSignatureRef = useRef<string | null>(null);
+  const lastResetSignalRef = useRef(resetViewSignal);
+  const devicesSignature = useMemo(
+    () => devices.map((device) => device.devEui).sort().join("|"),
+    [devices],
+  );
 
   useEffect(() => {
-    if (devices.length === 0) {
-      map.setView(defaultCenter, defaultZoom);
+    const markUserInteracted = () => {
+      if (!fittingRef.current) {
+        userInteractedRef.current = true;
+      }
+    };
+
+    map.on("dragstart", markUserInteracted);
+    map.on("zoomstart", markUserInteracted);
+
+    return () => {
+      map.off("dragstart", markUserInteracted);
+      map.off("zoomstart", markUserInteracted);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    const isResetRequested = resetViewSignal !== lastResetSignalRef.current;
+    if (isResetRequested) {
+      userInteractedRef.current = false;
+      lastResetSignalRef.current = resetViewSignal;
+    }
+
+    if (
+      userInteractedRef.current &&
+      devicesSignature === lastFitSignatureRef.current &&
+      !isResetRequested
+    ) {
       return;
     }
 
-    const bounds = latLngBounds(
-      devices.map((device) => [device.latitude, device.longitude] as [number, number]),
-    );
-    map.fitBounds(bounds, {
-      padding: [36, 36],
-      maxZoom: 15,
-    });
-  }, [map, devices, defaultCenter, defaultZoom]);
+    fittingRef.current = true;
+
+    if (devices.length === 0) {
+      map.setView(defaultCenter, defaultZoom);
+    } else {
+      const bounds = latLngBounds(
+        devices.map((device) => [device.latitude, device.longitude] as [number, number]),
+      );
+      map.fitBounds(bounds, {
+        padding: [40, 40],
+        maxZoom: 15,
+      });
+    }
+
+    lastFitSignatureRef.current = devicesSignature;
+    const timer = window.setTimeout(() => {
+      fittingRef.current = false;
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [map, devices, devicesSignature, defaultCenter, defaultZoom, resetViewSignal]);
 
   return null;
 }
@@ -74,13 +122,16 @@ export default function DeviceMapCanvas({
   defaultCenter,
   defaultZoom,
 }: DeviceMapCanvasProps) {
+  const [resetViewSignal, setResetViewSignal] = useState(0);
+
   return (
-    <div className="h-[600px] min-h-[560px] overflow-hidden rounded-xl xl:h-[700px]">
+    <div className="relative h-[clamp(540px,calc(100vh-290px),790px)] min-h-[540px] overflow-hidden rounded-xl">
       <MapContainer center={defaultCenter} zoom={defaultZoom} className="h-full w-full" scrollWheelZoom>
         <FitBoundsController
           devices={devices}
           defaultCenter={defaultCenter}
           defaultZoom={defaultZoom}
+          resetViewSignal={resetViewSignal}
         />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -134,6 +185,13 @@ export default function DeviceMapCanvas({
           );
         })}
       </MapContainer>
+      <button
+        type="button"
+        className="absolute right-3 top-3 z-[500] rounded-md bg-white/95 px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-800 shadow-md transition hover:bg-white"
+        onClick={() => setResetViewSignal((value) => value + 1)}
+      >
+        Reset view
+      </button>
     </div>
   );
 }

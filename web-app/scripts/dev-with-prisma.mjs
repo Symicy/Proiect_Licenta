@@ -178,11 +178,6 @@ function watchPath(targetPath, options, sourceLabel) {
 
 function watchPrismaInputs() {
   watchPath(path.join(projectRoot, "prisma", "schema.prisma"), {}, "prisma/schema.prisma");
-  watchPath(
-    path.join(projectRoot, "prisma", "migrations"),
-    { recursive: isWindows || process.platform === "darwin" },
-    "prisma/migrations",
-  );
 }
 
 async function shutdown() {

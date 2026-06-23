@@ -11,6 +11,7 @@
     "prisma:generate": "prisma generate",
     "provision:demo-devices": "node scripts/provision-demo-devices.mjs",
     "seed:history": "node scripts/seed-historical-telemetry.mjs",
+    "simulator:live": "node scripts/update-simulator-payloads.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -34,6 +35,7 @@
     "react-dom": "19.2.3",
     "react-leaflet": "^5.0.0",
     "recharts": "^3.8.1",
+    "socket.io-client": "^2.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

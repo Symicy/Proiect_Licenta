@@ -32,3 +32,17 @@ Folosiți capturi ale ecranului și explicații pas cu pas ale interacțiunii.
 Folosind acest manual, o persoană ar trebui să poată utiliza produsul vostru.
 
 {\noindent\color{blue} Între 1 și 5 pagini.\\}
+
+\chapter{Concluzii}
+\pagestyle{fancy}
+
+{\noindent\color{blue} Între 1 și 2 pagini.\\}
+
+Capitolul ar trebui sa conțină (nu se rezumă neapărat la):
+\begin{itemize}
+	\item un rezumat al contribuțiilor voastre
+	\item analiză critică a rezultatelor obținute
+	\item descriere a posibilelor dezvoltări și îmbunătățiri ulterioare
+\end{itemize}
+
+

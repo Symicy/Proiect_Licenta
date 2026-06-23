@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useDeviceSse } from "@/lib/hooks/useDeviceSse";
@@ -181,6 +181,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   const [selectedForecastError, setSelectedForecastError] = useState<string | null>(null);
   const [selectedDataLoading, setSelectedDataLoading] = useState(false);
   const [selectedDataError, setSelectedDataError] = useState<string | null>(null);
+  const selectedDataRequestId = useRef(0);
   const [fleetSummary, setFleetSummary] = useState<FleetSummary | null>(null);
   const [fleetSummaryLoading, setFleetSummaryLoading] = useState(false);
   const [fleetSummaryError, setFleetSummaryError] = useState<string | null>(null);
@@ -365,8 +366,20 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   }, []);
 
   const loadSelectedDeviceData = useCallback(async (devEui: string) => {
+    const requestId = selectedDataRequestId.current + 1;
+    selectedDataRequestId.current = requestId;
+
     setSelectedDataLoading(true);
     setSelectedDataError(null);
+    setSelectedLatest(null);
+    setSelectedReadings([]);
+    setSelectedForecast(null);
+    setSelectedForecastError(null);
+    setSelectedCosts({
+      today: null,
+      week: null,
+      month: null,
+    });
 
     try {
       const stop = new Date().toISOString();
@@ -403,6 +416,10 @@ export function useDashboardController(initialView: ViewKey = "overview") {
           forecastRequest,
         ]);
 
+      if (requestId !== selectedDataRequestId.current) {
+        return;
+      }
+
       setSelectedLatest(latestPayload.reading);
       setSelectedReadings(readingsPayload.readings);
       setSelectedCosts({
@@ -413,6 +430,10 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       setSelectedForecast(forecastResult.payload);
       setSelectedForecastError(forecastResult.error);
     } catch (error) {
+      if (requestId !== selectedDataRequestId.current) {
+        return;
+      }
+
       setSelectedDataError(extractErrorMessage(error));
       setSelectedLatest(null);
       setSelectedReadings([]);
@@ -424,7 +445,9 @@ export function useDashboardController(initialView: ViewKey = "overview") {
         month: null,
       });
     } finally {
-      setSelectedDataLoading(false);
+      if (requestId === selectedDataRequestId.current) {
+        setSelectedDataLoading(false);
+      }
     }
   }, []);
 
@@ -488,7 +511,9 @@ export function useDashboardController(initialView: ViewKey = "overview") {
 
       const reading = streamPayload?.reading ?? (selectedDevEui === device.devEui ? selectedLatest : null);
       const loadWatts =
-        reading && reading.voltage !== null && reading.current !== null
+        reading && device.utilityType === "ELECTRICITY" && reading.rate !== null
+          ? reading.rate * 1000
+          : reading && reading.voltage !== null && reading.current !== null
           ? reading.voltage * reading.current
           : null;
       const latestConsumption = reading?.consumption ?? null;
@@ -599,9 +624,11 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   const chartLabels = useMemo(() => buildTimelineLabels(selectedReadings), [selectedReadings]);
 
   const currentLoadWatts =
-    selectedLatest && selectedLatest.voltage !== null && selectedLatest.current !== null
-      ? selectedLatest.voltage * selectedLatest.current
-      : null;
+    selectedLatest && selectedDevice?.utilityType === "ELECTRICITY" && selectedLatest.rate !== null
+      ? selectedLatest.rate * 1000
+      : selectedLatest && selectedLatest.voltage !== null && selectedLatest.current !== null
+        ? selectedLatest.voltage * selectedLatest.current
+        : null;
   const currentLoadKw = currentLoadWatts !== null ? currentLoadWatts / 1000 : null;
   const currentConsumption = selectedLatest?.consumption ?? null;
 
@@ -923,6 +950,19 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   };
 
   const handleSelectDevice = (devEui: string, targetView: ViewKey = "meter") => {
+    if (devEui !== selectedDevEui) {
+      setSelectedLatest(null);
+      setSelectedReadings([]);
+      setSelectedForecast(null);
+      setSelectedForecastError(null);
+      setSelectedDataError(null);
+      setSelectedCosts({
+        today: null,
+        week: null,
+        month: null,
+      });
+    }
+
     setSelectedDevEui(devEui);
     setActiveViewWithRoute(targetView);
   };

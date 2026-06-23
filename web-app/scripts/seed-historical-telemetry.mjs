@@ -7,6 +7,7 @@ import {
   consumptionIncrement,
   initialCumulativeConsumption,
   readingCurrent,
+  readingRate,
   readingVoltage,
   roundDownToHour,
 } from "./demo-telemetry-profile.mjs";
@@ -138,14 +139,22 @@ async function main() {
 
         const voltage = readingVoltage(device, timestamp);
         const current = readingCurrent(device, increment, stepHours);
+        const rate = device.utilityType === "ELECTRICITY"
+          ? (voltage * current) / 1000
+          : readingRate(device, increment, stepHours);
 
         const point = new Point("meter_reading")
           .tag("devEui", device.devEui)
           .tag("utilityType", device.utilityType)
           .floatField("consumption", Number(cumulative.toFixed(4)))
-          .floatField("voltage", Number(voltage.toFixed(2)))
-          .floatField("current", Number(current.toFixed(3)))
+          .floatField("rate", Number(rate.toFixed(4)))
           .timestamp(timestamp);
+
+        if (device.utilityType === "ELECTRICITY") {
+          point
+            .floatField("voltage", Number(voltage.toFixed(2)))
+            .floatField("current", Number(current.toFixed(3)));
+        }
 
         writeApi.writePoint(point);
         written += 1;

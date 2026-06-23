@@ -187,6 +187,14 @@ export function readingCurrent(device, increment, stepHours) {
   return Math.max((increment / stepHours) * profile.currentFactor, 0.01);
 }
 
+export function readingRate(device, increment, stepHours) {
+  if (!Number.isFinite(increment) || !Number.isFinite(stepHours) || stepHours <= 0) {
+    return 0;
+  }
+
+  return Math.max(increment / stepHours, 0);
+}
+
 export function estimateCumulativeConsumption(device, options = {}) {
   const days = options.days ?? DEFAULT_HISTORY_DAYS;
   const stepHours = options.stepHours ?? DEFAULT_STEP_HOURS;
@@ -205,16 +213,56 @@ export function estimateCumulativeConsumption(device, options = {}) {
   return { cumulative, lastIncrement, stop, stepHours };
 }
 
-export function encodeSmartMeterPayload(device, options = {}) {
+export function buildTelemetryReading(device, options = {}) {
   const { cumulative, lastIncrement, stepHours, stop } = estimateCumulativeConsumption(device, options);
-  const consumption = clamp(Math.round(cumulative), 0, 65535);
-  const voltage = clamp(Math.round(readingVoltage(device, stop)), 0, 255);
-  const current = clamp(Math.round(readingCurrent(device, lastIncrement, stepHours) * 10), 0, 255);
+  const voltage = readingVoltage(device, stop);
+  const current = readingCurrent(device, lastIncrement, stepHours);
+  const rate = readingRate(device, lastIncrement, stepHours);
 
-  return Buffer.from([
+  return {
+    timestamp: stop,
+    cumulative,
+    lastIncrement,
+    stepHours,
+    rate,
     voltage,
     current,
-    (consumption >> 8) & 0xff,
-    consumption & 0xff,
-  ]).toString("base64");
+    powerKw: (voltage * current) / 1000,
+  };
 }
+
+function decimal(value, precision) {
+  return Number.isFinite(value) ? Number(value.toFixed(precision)) : 0;
+}
+
+export function encodeUtilityPayloadFromReading(device, reading) {
+  const utilityType = device.utilityType ?? "OTHER";
+  const total = decimal(reading.cumulative, 3);
+
+  switch (utilityType) {
+    case "ELECTRICITY":
+      return [
+        "E",
+        decimal(reading.cumulative, 3),
+        decimal(reading.voltage, 1),
+        decimal(reading.current, 3),
+      ].join(",");
+    case "GAS":
+      return ["G", total, decimal(reading.rate, 4)].join(",");
+    case "WATER":
+      return ["W", total, decimal(reading.rate, 4)].join(",");
+    case "HEATING":
+      return ["H", total, decimal(reading.rate, 4)].join(",");
+    case "COOLING":
+      return ["C", total, decimal(reading.rate, 4)].join(",");
+    default:
+      return ["O", total, decimal(reading.rate, 4)].join(",");
+  }
+}
+
+export function encodeUtilityPayload(device, options = {}) {
+  return encodeUtilityPayloadFromReading(device, buildTelemetryReading(device, options));
+}
+
+// Backward-compatible name used by existing provisioning code.
+export const encodeSmartMeterPayload = encodeUtilityPayload;

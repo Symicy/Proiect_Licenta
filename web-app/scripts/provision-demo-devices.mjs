@@ -99,6 +99,151 @@ const UTILITY_DEFINITIONS = [
   { type: "COOLING", label: "Cooling", unit: "kWh", tariff: 0.14, cluster: [-0.0048, -0.004] },
 ];
 
+const DEVICE_PROFILE_NAMES = {
+  ELECTRICITY: "WattWise_Electricity_Meter",
+  GAS: "WattWise_Gas_Meter",
+  WATER: "WattWise_Water_Meter",
+  HEATING: "WattWise_Heating_Meter",
+  COOLING: "WattWise_Cooling_Meter",
+};
+
+const CODEC_FIELDS = {
+  ELECTRICITY: {
+    prefix: "E",
+    script: `
+      var total = readNumber(parts, 1);
+      var voltage = readNumber(parts, 2);
+      var current = readNumber(parts, 3);
+      var powerKw = voltage * current / 1000;
+      return {
+        data: {
+          utilityType: "ELECTRICITY",
+          consumption: total,
+          consum_total_kWh: total,
+          voltage: voltage,
+          current: current,
+          power_kw: powerKw
+        }
+      };
+    `,
+    measurements: {
+      consumption: { kind: "COUNTER", name: "Consumption" },
+      voltage: { kind: "GAUGE", name: "Voltage" },
+      current: { kind: "GAUGE", name: "Current" },
+      power_kw: { kind: "GAUGE", name: "Load" },
+    },
+  },
+  GAS: {
+    prefix: "G",
+    script: `
+      var total = readNumber(parts, 1);
+      var flow = readNumber(parts, 2);
+      return {
+        data: {
+          utilityType: "GAS",
+          consumption: total,
+          gas_volume_m3: total,
+          flow_m3_h: flow
+        }
+      };
+    `,
+    measurements: {
+      consumption: { kind: "COUNTER", name: "Gas volume" },
+      flow_m3_h: { kind: "GAUGE", name: "Flow rate" },
+    },
+  },
+  WATER: {
+    prefix: "W",
+    script: `
+      var total = readNumber(parts, 1);
+      var flow = readNumber(parts, 2);
+      return {
+        data: {
+          utilityType: "WATER",
+          consumption: total,
+          water_volume_m3: total,
+          flow_m3_h: flow
+        }
+      };
+    `,
+    measurements: {
+      consumption: { kind: "COUNTER", name: "Water volume" },
+      flow_m3_h: { kind: "GAUGE", name: "Flow rate" },
+    },
+  },
+  HEATING: {
+    prefix: "H",
+    script: `
+      var total = readNumber(parts, 1);
+      var thermalPower = readNumber(parts, 2);
+      return {
+        data: {
+          utilityType: "HEATING",
+          consumption: total,
+          thermal_energy_kwh: total,
+          thermal_power_kw: thermalPower
+        }
+      };
+    `,
+    measurements: {
+      consumption: { kind: "COUNTER", name: "Thermal energy" },
+      thermal_power_kw: { kind: "GAUGE", name: "Thermal rate" },
+    },
+  },
+  COOLING: {
+    prefix: "C",
+    script: `
+      var total = readNumber(parts, 1);
+      var coolingPower = readNumber(parts, 2);
+      return {
+        data: {
+          utilityType: "COOLING",
+          consumption: total,
+          cooling_energy_kwh: total,
+          cooling_power_kw: coolingPower
+        }
+      };
+    `,
+    measurements: {
+      consumption: { kind: "COUNTER", name: "Cooling energy" },
+      cooling_power_kw: { kind: "GAUGE", name: "Cooling rate" },
+    },
+  },
+};
+
+function buildAsciiCodec(utilityType) {
+  const definition = CODEC_FIELDS[utilityType];
+
+  return `function decodeUplink(input) {
+  function bytesToString(bytes) {
+    var text = "";
+    for (var i = 0; i < bytes.length; i++) {
+      text += String.fromCharCode(bytes[i]);
+    }
+    return text;
+  }
+
+  function readNumber(parts, index) {
+    var value = parseFloat(parts[index]);
+    if (isNaN(value) || !isFinite(value)) {
+      return 0;
+    }
+    return value;
+  }
+
+  var payload = bytesToString(input.bytes);
+  var parts = payload.split(",");
+  if (parts[0] !== "${definition.prefix}") {
+    return {
+      errors: ["Invalid payload prefix for ${utilityType}: " + payload],
+      data: {}
+    };
+  }
+
+${definition.script}
+}`;
+}
+
 function required(value, label) {
   if (!value) {
     throw new Error(`${label} is not configured.`);
@@ -283,7 +428,7 @@ function buildDefaultLwnTemplate(latitude, longitude) {
           fcnt: 0,
         },
         fcntDown: 0,
-        base64: true,
+        base64: false,
       },
       configuration: {
         region: 1,
@@ -335,7 +480,7 @@ function buildLwnDevice({ id, template, device }) {
           fcnt: 0,
         },
         fcntDown: 0,
-        base64: templateStatus.base64 ?? true,
+        base64: false,
       },
       configuration: {
         ...templateConfiguration,
@@ -393,6 +538,91 @@ async function updateSimulatorDevice(deviceBody) {
   }
 }
 
+async function ensureChirpStackDeviceProfile(chirpStackPool, baseProfileId, utilityType) {
+  const profileName = DEVICE_PROFILE_NAMES[utilityType];
+  const codecScript = buildAsciiCodec(utilityType);
+  const measurements = JSON.stringify(CODEC_FIELDS[utilityType].measurements);
+
+  const existingResult = await chirpStackPool.query(
+    "SELECT id FROM device_profile WHERE name = $1 ORDER BY created_at DESC LIMIT 1",
+    [profileName],
+  );
+
+  const existingId = existingResult.rows[0]?.id;
+  if (existingId) {
+    await chirpStackPool.query(
+      `
+        UPDATE device_profile
+        SET
+          updated_at = NOW(),
+          payload_codec_runtime = 'JS',
+          payload_codec_script = $2,
+          measurements = $3::jsonb,
+          auto_detect_measurements = false,
+          description = $4
+        WHERE id = $1::uuid
+      `,
+      [
+        existingId,
+        codecScript,
+        measurements,
+        `${utilityType} meter profile used by the WattWise thesis demo.`,
+      ],
+    );
+
+    return existingId;
+  }
+
+  const newId = randomUUID();
+  await chirpStackPool.query(
+    `
+      INSERT INTO device_profile (
+        id, tenant_id, created_at, updated_at, name, region, mac_version, reg_params_revision,
+        adr_algorithm_id, payload_codec_runtime, uplink_interval, device_status_req_interval,
+        supports_otaa, supports_class_b, supports_class_c, tags, payload_codec_script,
+        flush_queue_on_activate, description, measurements, auto_detect_measurements,
+        region_config_id, allow_roaming, rx1_delay, abp_params, class_b_params, class_c_params,
+        relay_params, app_layer_params, device_id, firmware_version, vendor_profile_id,
+        supported_uplink_data_rates
+      )
+      SELECT
+        $1::uuid, tenant_id, NOW(), NOW(), $2, region, mac_version, reg_params_revision,
+        adr_algorithm_id, 'JS', uplink_interval, device_status_req_interval,
+        supports_otaa, supports_class_b, supports_class_c, tags, $3,
+        flush_queue_on_activate, $4, $5::jsonb, false,
+        region_config_id, allow_roaming, rx1_delay, abp_params, class_b_params, class_c_params,
+        relay_params, app_layer_params, device_id, firmware_version, vendor_profile_id,
+        supported_uplink_data_rates
+      FROM device_profile
+      WHERE id = $6::uuid
+    `,
+    [
+      newId,
+      profileName,
+      codecScript,
+      `${utilityType} meter profile used by the WattWise thesis demo.`,
+      measurements,
+      baseProfileId,
+    ],
+  );
+
+  return newId;
+}
+
+async function ensureChirpStackDeviceProfiles(chirpStackPool, baseProfileId) {
+  const profileIdsByUtility = {};
+
+  for (const utilityDefinition of UTILITY_DEFINITIONS) {
+    profileIdsByUtility[utilityDefinition.type] = await ensureChirpStackDeviceProfile(
+      chirpStackPool,
+      baseProfileId,
+      utilityDefinition.type,
+    );
+  }
+
+  return profileIdsByUtility;
+}
+
 async function resolveChirpStackTargets(chirpStackPool) {
   const applicationName = process.env.CHIRPSTACK_APPLICATION_NAME ?? "Monitorizare_Energie";
   const profileName = process.env.CHIRPSTACK_DEVICE_PROFILE_NAME ?? "Profil_SmartMeter";
@@ -407,13 +637,15 @@ async function resolveChirpStackTargets(chirpStackPool) {
   );
 
   const applicationId = applicationResult.rows[0]?.id;
-  const deviceProfileId = profileResult.rows[0]?.id;
+  const baseDeviceProfileId = profileResult.rows[0]?.id;
 
-  if (!applicationId || !deviceProfileId) {
+  if (!applicationId || !baseDeviceProfileId) {
     throw new Error(`Could not find ChirpStack application "${applicationName}" and profile "${profileName}".`);
   }
 
-  return { applicationId, deviceProfileId };
+  const profileIdsByUtility = await ensureChirpStackDeviceProfiles(chirpStackPool, baseDeviceProfileId);
+
+  return { applicationId, baseDeviceProfileId, profileIdsByUtility };
 }
 
 async function upsertDemoUser(appPool, demoUser) {
@@ -487,6 +719,7 @@ function buildDemoDevices(baseLatitude, baseLongitude) {
 }
 
 async function upsertChirpStackDevice(chirpStackPool, targets, device) {
+  const deviceProfileId = targets.profileIdsByUtility[device.utilityType] ?? targets.baseDeviceProfileId;
   const tags = {
     app: "wattwise",
     demoFleet: "true",
@@ -537,7 +770,7 @@ async function upsertChirpStackDevice(chirpStackPool, targets, device) {
     [
       device.devEui,
       targets.applicationId,
-      targets.deviceProfileId,
+      deviceProfileId,
       device.name,
       `${device.utilityType} smart meter provisioned for the WattWise thesis demo.`,
       device.latitude,

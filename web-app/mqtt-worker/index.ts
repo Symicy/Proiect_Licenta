@@ -28,6 +28,13 @@ type DecodedUplinkObject = {
   current?: number | string;
   tensiune_V?: number | string;
   curent_A?: number | string;
+  rate?: number | string;
+  power_kw?: number | string;
+  load_kw?: number | string;
+  flow_m3_h?: number | string;
+  flowRate?: number | string;
+  thermal_power_kw?: number | string;
+  cooling_power_kw?: number | string;
   utilityType?: string;
   meterType?: string;
   [key: string]: unknown;
@@ -85,6 +92,18 @@ function resolveConsumption(decodedData: DecodedUplinkObject) {
   ]);
 }
 
+function resolveRate(decodedData: DecodedUplinkObject) {
+  return firstFiniteNumber([
+    decodedData.rate,
+    decodedData.power_kw,
+    decodedData.load_kw,
+    decodedData.flow_m3_h,
+    decodedData.flowRate,
+    decodedData.thermal_power_kw,
+    decodedData.cooling_power_kw,
+  ]);
+}
+
 function resolveUtilityType(decodedData: DecodedUplinkObject, deviceTags?: Record<string, string>) {
   const rawValue =
     typeof decodedData.utilityType === "string"
@@ -136,10 +155,11 @@ mqttClient.on("message", (_topic: string, message: Buffer) => {
     }
 
     const consumption = resolveConsumption(decodedData);
+    const rate = resolveRate(decodedData);
     const voltage = firstFiniteNumber([decodedData.voltage, decodedData.tensiune_V]);
     const current = firstFiniteNumber([decodedData.current, decodedData.curent_A]);
 
-    if (consumption === null && voltage === null && current === null) {
+    if (consumption === null && rate === null && voltage === null && current === null) {
       console.warn(`Skipping uplink for ${devEui}: no mapped numeric fields.`);
       return;
     }
@@ -152,6 +172,9 @@ mqttClient.on("message", (_topic: string, message: Buffer) => {
 
     if (consumption !== null) {
       point.floatField("consumption", consumption);
+    }
+    if (rate !== null) {
+      point.floatField("rate", rate);
     }
     if (voltage !== null) {
       point.floatField("voltage", voltage);

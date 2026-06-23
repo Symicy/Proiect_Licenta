@@ -173,6 +173,7 @@ describe("dashboard formatting and runtime status", () => {
           consumption: 125,
           voltage: 230,
           current: 2.5,
+          rate: 0.575,
         },
         "open",
       ),

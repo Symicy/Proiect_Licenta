@@ -62,7 +62,7 @@ function getPageWindow<TItem>(items: TItem[], page: number, pageSize: number) {
 }
 
 function MapCanvasSkeleton() {
-  return <div className="h-[600px] min-h-[560px] animate-pulse rounded-lg bg-surface-container-low xl:h-[700px]" />;
+  return <div className="h-[clamp(540px,calc(100vh-290px),790px)] min-h-[540px] animate-pulse rounded-lg bg-surface-container-low" />;
 }
 
 const DeviceMapCanvas = dynamic(() => import("./components/DeviceMapCanvas"), {
@@ -385,11 +385,9 @@ function toForecastSeries(forecast: ForecastResponse | null): ForecastSeriesPoin
   const lastObserved = observed.at(-1);
 
   if (lastObserved && forecastPoints.length > 0) {
-    forecastPoints.unshift({
-      ...lastObserved,
-      observed: null,
-      predicted: lastObserved.observed,
-    });
+    lastObserved.predicted = lastObserved.observed;
+    lastObserved.lower = lastObserved.observed;
+    lastObserved.upper = lastObserved.observed;
   }
 
   return [...observed, ...forecastPoints];
@@ -417,6 +415,76 @@ function forecastStatusMessage(forecast: ForecastResponse | null, error: string 
   }
 
   return null;
+}
+
+function sortedConsumptionReadings(readings: MeterReading[], latest: MeterReading | null | undefined) {
+  const byTimestamp = new Map<string, MeterReading>();
+
+  readings.forEach((reading) => {
+    if (reading.consumption !== null && Number.isFinite(reading.consumption)) {
+      byTimestamp.set(reading.timestamp, reading);
+    }
+  });
+
+  if (latest?.consumption !== null && latest?.consumption !== undefined && Number.isFinite(latest.consumption)) {
+    byTimestamp.set(latest.timestamp, latest);
+  }
+
+  return [...byTimestamp.values()].sort((first, second) => Date.parse(first.timestamp) - Date.parse(second.timestamp));
+}
+
+function latestConsumptionRate(readings: MeterReading[], latest: MeterReading | null | undefined) {
+  const points = sortedConsumptionReadings(readings, latest);
+  if (points.length < 2) {
+    return null;
+  }
+
+  const current = points.at(-1);
+  const previous = points.at(-2);
+  if (!current || !previous || current.consumption === null || previous.consumption === null) {
+    return null;
+  }
+
+  const elapsedHours = (Date.parse(current.timestamp) - Date.parse(previous.timestamp)) / (60 * 60 * 1000);
+  if (!Number.isFinite(elapsedHours) || elapsedHours <= 0) {
+    return null;
+  }
+
+  return Math.max(current.consumption - previous.consumption, 0) / elapsedHours;
+}
+
+function rateUnitForDevice(device: { unitLabel: string; utilityType: UtilityType }) {
+  if (device.unitLabel.toLowerCase() === "kwh") {
+    return "kW";
+  }
+
+  return `${device.unitLabel}/h`;
+}
+
+function rateLabelForUtility(utilityType: UtilityType) {
+  if (utilityType === "GAS" || utilityType === "WATER") {
+    return "Flow Rate";
+  }
+
+  if (utilityType === "HEATING" || utilityType === "COOLING") {
+    return "Thermal Rate";
+  }
+
+  return "Usage Rate";
+}
+
+function gaugeMaxForUtility(utilityType: UtilityType) {
+  switch (utilityType) {
+    case "GAS":
+      return 3;
+    case "WATER":
+      return 2;
+    case "HEATING":
+    case "COOLING":
+      return 8;
+    default:
+      return 5;
+  }
 }
 
 function toBillingChartPoints(rows: DeviceRow[]): BillingChartPoint[] {
@@ -680,7 +748,8 @@ export function DevicesView({ controller }: ViewProps) {
     handleEditDevice,
   } = controller;
   const [claimOpen, setClaimOpen] = useState(false);
-  const shouldShowClaim = claimOpen || Boolean(claimError || claimSuccess);
+  const canClaimDevices = controller.user?.role === "CUSTOMER";
+  const shouldShowClaim = canClaimDevices && (claimOpen || Boolean(claimError || claimSuccess));
   const [devicePage, setDevicePage] = useState(1);
   const deviceTotalPages = getTotalPages(filteredDeviceRows.length, DEVICE_PAGE_SIZE);
   const currentDevicePage = getCurrentPage(devicePage, deviceTotalPages);
@@ -689,6 +758,13 @@ export function DevicesView({ controller }: ViewProps) {
     [currentDevicePage, filteredDeviceRows],
   );
   const tr = (phrase: string) => translateText(controller.language, phrase);
+  const isCompanyCustomer = controller.user?.customerType === "COMPANY";
+  const claimLabel = isCompanyCustomer ? tr("Company Claim Code") : tr("Individual Claim Code");
+  const claimHelpText = isCompanyCustomer
+    ? tr("Use the company claim code to link the prepared fleet devices to this account.")
+    : tr("Use an individual claim code to link personal or household meters to this account.");
+  const claimPlaceholder = isCompanyCustomer ? "COMPANY-DEMO-2026" : "USER1-DEMO-2026";
+  const claimSubmitLabel = isCompanyCustomer ? tr("Claim Fleet Devices") : tr("Claim Personal Devices");
 
   return (
     <div className="space-y-6">
@@ -706,14 +782,16 @@ export function DevicesView({ controller }: ViewProps) {
             eyebrow={`${filteredDeviceRows.length} visible`}
           />
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-full bg-surface-container-highest px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
-              onClick={() => setClaimOpen((previous) => !previous)}
-            >
-              <UIIcon name="key" className="text-[14px]" />
-              {tr("Claim")}
-            </button>
+            {canClaimDevices ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-full bg-surface-container-highest px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
+                onClick={() => setClaimOpen((previous) => !previous)}
+              >
+                <UIIcon name="key" className="text-[14px]" />
+                {tr("Claim")}
+              </button>
+            ) : null}
             <button
               type="button"
               className="primary-gradient-bg inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90"
@@ -729,10 +807,10 @@ export function DevicesView({ controller }: ViewProps) {
           <form className="mt-5 rounded-lg bg-surface-container-low p-4" onSubmit={handleClaimDevices}>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
               <label className="block flex-1">
-                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{tr("Claim Code")}</span>
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{claimLabel}</span>
                 <input
                   className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 font-mono text-sm uppercase outline-none transition focus:border-primary"
-                  placeholder="COMPANY-DEMO-2026"
+                  placeholder={claimPlaceholder}
                   value={claimCode}
                   onChange={(event) => {
                     setClaimCode(event.target.value);
@@ -741,6 +819,7 @@ export function DevicesView({ controller }: ViewProps) {
                   }}
                   required
                 />
+                <span className="mt-2 block text-xs text-on-surface-variant">{claimHelpText}</span>
               </label>
               <button
                 type="submit"
@@ -748,7 +827,7 @@ export function DevicesView({ controller }: ViewProps) {
                 disabled={claimSubmitting}
               >
                 <UIIcon name="add_box" className="text-[16px]" />
-                {claimSubmitting ? "Claiming..." : "Claim Devices"}
+                {claimSubmitting ? tr("Claiming...") : claimSubmitLabel}
               </button>
             </div>
             {claimError ? <p className="mt-3 text-sm text-error">{claimError}</p> : null}
@@ -1141,23 +1220,41 @@ function HomeMapPanel({ controller }: ViewProps) {
   } = controller;
   const [utilityFilter, setUtilityFilter] = useState<MapUtilityFilter>("all");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
+  const [mapSearchQuery, setMapSearchQuery] = useState("");
+  const tr = (phrase: string) => translateText(controller.language, phrase);
 
   const mapRows = useMemo(
-    () =>
-      deviceRows.filter((row) => {
+    () => {
+      const normalizedSearch = mapSearchQuery.trim().toLowerCase();
+
+      return deviceRows.filter((row) => {
         const hasCoordinates = typeof row.device.latitude === "number" && typeof row.device.longitude === "number";
         const matchesUtility = utilityFilter === "all" || row.device.utilityType === utilityFilter;
         const matchesStatus = statusFilter === "all" || row.status === statusFilter;
-        return hasCoordinates && matchesUtility && matchesStatus;
-      }),
-    [deviceRows, statusFilter, utilityFilter],
+        const matchesSearch =
+          normalizedSearch.length === 0 ||
+          row.device.name.toLowerCase().includes(normalizedSearch) ||
+          row.device.devEui.toLowerCase().includes(normalizedSearch);
+
+        return hasCoordinates && matchesUtility && matchesStatus && matchesSearch;
+      });
+    },
+    [deviceRows, mapSearchQuery, statusFilter, utilityFilter],
   );
-  const mapDevices = mapRows.map((row) => row.device as typeof row.device & { latitude: number; longitude: number });
+  const mapDevices = useMemo(
+    () => mapRows.map((row) => row.device as typeof row.device & { latitude: number; longitude: number }),
+    [mapRows],
+  );
   const selectedMappedDevice = mapDevices.find((device) => device.devEui === selectedDevEui) ?? null;
-  const groupedByUtility = UTILITY_TYPES.map((utilityType) => ({
-    utilityType,
-    rows: mapRows.filter((row) => row.device.utilityType === utilityType),
-  })).filter((group) => group.rows.length > 0);
+  const groupedByUtility = useMemo(
+    () =>
+      UTILITY_TYPES.map((utilityType) => ({
+        utilityType,
+        rows: mapRows.filter((row) => row.device.utilityType === utilityType),
+      })).filter((group) => group.rows.length > 0),
+    [mapRows],
+  );
+  const filtersAreActive = utilityFilter !== "all" || statusFilter !== "all" || mapSearchQuery.trim().length > 0;
 
   if (devicesLoading && devices.length === 0) {
     return (
@@ -1188,8 +1285,8 @@ function HomeMapPanel({ controller }: ViewProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-      <Panel className="xl:col-span-9">
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
+      <Panel className="min-w-0">
         {mapDevices.length > 0 ? (
           <DeviceMapCanvas
             devices={mapDevices}
@@ -1199,81 +1296,103 @@ function HomeMapPanel({ controller }: ViewProps) {
             defaultZoom={14}
           />
         ) : (
-          <div className="flex h-[600px] min-h-[560px] items-center justify-center rounded-lg bg-surface-container-low px-6 text-center text-sm text-on-surface-variant xl:h-[700px]">
+          <div className="flex h-[clamp(540px,calc(100vh-290px),790px)] min-h-[540px] items-center justify-center rounded-lg bg-surface-container-low px-6 text-center text-sm text-on-surface-variant">
             No mapped devices match the selected filters.
           </div>
         )}
       </Panel>
 
-      <aside className="rounded-lg bg-surface-container-high p-5 xl:col-span-3">
-        <SectionHeader title="Map Selection" subtitle={`${mapDevices.length} mapped device(s)`} eyebrow="Location" />
+      <aside className="flex min-h-[540px] flex-col rounded-lg bg-surface-container-high p-4 xl:h-[clamp(588px,calc(100vh-242px),838px)]">
+        <SectionHeader title={tr("Map Selection")} subtitle={`${mapDevices.length} mapped device(s)`} eyebrow={tr("Location")} />
 
-        <div className="mt-5 space-y-3">
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Utility</p>
-            <div className="flex flex-wrap gap-2">
-              {(["all", ...UTILITY_TYPES] as const).map((utilityType) => {
-                const isSelected = utilityFilter === utilityType;
-                return (
-                  <button
-                    type="button"
-                    key={`map-utility-${utilityType}`}
-                    className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.08em] ${
-                      isSelected ? "bg-primary text-[#1a1766]" : "bg-surface-container-low text-on-surface-variant"
-                    }`}
-                    onClick={() => setUtilityFilter(utilityType)}
-                  >
-                    {utilityType === "all" ? "All" : utilityTypeLabel(utilityType)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Status</p>
-            <div className="flex flex-wrap gap-2">
-              {STATUS_FILTERS.map((status) => (
-                <button
-                  type="button"
-                  key={`map-status-${status}`}
-                  className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.08em] ${
-                    statusFilter === status ? "bg-primary text-[#1a1766]" : "bg-surface-container-low text-on-surface-variant"
-                  }`}
-                  onClick={() => setStatusFilter(status)}
-                >
-                  {status}
-                </button>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="mb-1.5 block text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+              {tr("Utility")}
+            </span>
+            <select
+              className="min-h-10 w-full rounded-lg border border-outline-variant/25 bg-surface-container-low px-3 text-xs font-bold uppercase tracking-[0.06em] outline-none transition focus:border-primary"
+              value={utilityFilter}
+              onChange={(event) => setUtilityFilter(event.target.value as MapUtilityFilter)}
+            >
+              <option value="all">{tr("All")}</option>
+              {UTILITY_TYPES.map((utilityType) => (
+                <option key={`map-utility-option-${utilityType}`} value={utilityType}>
+                  {utilityTypeLabel(utilityType)}
+                </option>
               ))}
-            </div>
-          </div>
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+              {tr("Status")}
+            </span>
+            <select
+              className="min-h-10 w-full rounded-lg border border-outline-variant/25 bg-surface-container-low px-3 text-xs font-bold uppercase tracking-[0.06em] outline-none transition focus:border-primary"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as (typeof STATUS_FILTERS)[number])}
+            >
+              {STATUS_FILTERS.map((status) => (
+                <option key={`map-status-option-${status}`} value={status}>
+                  {status === "all" ? tr("All") : tr(statusLabel(status))}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <input
+            className="min-h-10 min-w-0 flex-1 rounded-lg border border-outline-variant/25 bg-surface-container-low px-3 text-sm outline-none transition placeholder:text-on-surface-variant focus:border-primary"
+            placeholder={tr("Search map devices")}
+            value={mapSearchQuery}
+            onChange={(event) => setMapSearchQuery(event.target.value)}
+          />
+          {filtersAreActive ? (
+            <button
+              type="button"
+              className="rounded-lg bg-surface-container-highest px-3 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
+              onClick={() => {
+                setUtilityFilter("all");
+                setStatusFilter("all");
+                setMapSearchQuery("");
+              }}
+            >
+              {tr("Reset")}
+            </button>
+          ) : null}
         </div>
 
         {selectedMappedDevice ? (
-          <article className="mt-5 rounded-lg bg-surface-container-low p-4">
-            <p className="text-sm font-semibold">{selectedMappedDevice.name}</p>
-            <p className="mt-1 font-mono text-xs text-on-surface-variant">{selectedMappedDevice.devEui}</p>
-            <div className="mt-2">
+          <article className="mt-4 rounded-lg bg-surface-container-low p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{selectedMappedDevice.name}</p>
+                <p className="mt-1 truncate font-mono text-[0.6875rem] text-on-surface-variant">{selectedMappedDevice.devEui}</p>
+              </div>
               <UtilityChip utilityType={selectedMappedDevice.utilityType} />
             </div>
-            <p className="mt-3 font-mono text-xs text-on-surface-variant">
-              {selectedMappedDevice.latitude.toFixed(5)}, {selectedMappedDevice.longitude.toFixed(5)}
-            </p>
-            <button
-              type="button"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-surface-container-highest px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
-              onClick={() => handleSelectDevice(selectedMappedDevice.devEui, "meter")}
-            >
-              <UIIcon name="visibility" className="text-[14px]" />
-              Open Meter
-            </button>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="font-mono text-xs text-on-surface-variant">
+                {selectedMappedDevice.latitude.toFixed(5)}, {selectedMappedDevice.longitude.toFixed(5)}
+              </p>
+              <button
+                type="button"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-surface-container-highest px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
+                onClick={() => handleSelectDevice(selectedMappedDevice.devEui, "meter")}
+              >
+                <UIIcon name="visibility" className="text-[14px]" />
+                {tr("Open Meter")}
+              </button>
+            </div>
           </article>
         ) : null}
 
-        <div className="mt-5 max-h-[520px] space-y-4 overflow-y-auto pr-1 xl:max-h-[610px]">
+        <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
           {groupedByUtility.map((group) => (
             <div key={`map-group-${group.utilityType}`}>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+              <p className="sticky top-0 z-10 mb-2 rounded bg-surface-container-high py-1 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
                 {utilityTypeLabel(group.utilityType)} ({group.rows.length})
               </p>
               <div className="space-y-2">
@@ -1283,7 +1402,7 @@ function HomeMapPanel({ controller }: ViewProps) {
                     <button
                       key={`map-list-${row.device.id}`}
                       type="button"
-                      className={`w-full rounded-lg px-4 py-3 text-left transition ${
+                      className={`w-full rounded-lg px-3 py-2.5 text-left transition ${
                         isSelected
                           ? "bg-primary text-[#1a1766]"
                           : "bg-surface-container-low text-on-surface hover:bg-surface-container-highest"
@@ -1291,7 +1410,7 @@ function HomeMapPanel({ controller }: ViewProps) {
                       onClick={() => handleSelectDevice(row.device.devEui, "overview")}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold">{row.device.name}</p>
+                        <p className="truncate text-sm font-semibold">{row.device.name}</p>
                         <StatusChip status={row.status} />
                       </div>
                       <p className={`mt-1 font-mono text-xs ${isSelected ? "text-[#1a1766]/80" : "text-on-surface-variant"}`}>
@@ -1314,6 +1433,7 @@ export function MeterView({ controller }: ViewProps) {
     devices,
     selectedDevice,
     selectedDeviceRow,
+    selectedDataLoading,
     selectedDataError,
     selectedLatest,
     streamStatus,
@@ -1322,7 +1442,6 @@ export function MeterView({ controller }: ViewProps) {
     selectedForecast,
     selectedForecastError,
     selectedReadings,
-    currentLoadWatts,
     currentLoadKw,
     currentConsumption,
     handleSelectDevice,
@@ -1337,7 +1456,14 @@ export function MeterView({ controller }: ViewProps) {
     return <Panel className="text-sm text-on-surface-variant">{tr("Select or register a device to open meter details.")}</Panel>;
   }
 
-  const gaugeProgress = clamp((currentLoadWatts ?? 0) / 6000, 0, 1);
+  const isElectricMeter = selectedDevice.utilityType === "ELECTRICITY";
+  const currentRate = selectedLatest?.rate ?? latestConsumptionRate(selectedReadings, selectedLatest);
+  const liveMetricValue = isElectricMeter ? currentLoadKw : currentRate;
+  const liveMetricUnit = isElectricMeter ? "kW" : rateUnitForDevice(selectedDevice);
+  const liveMetricLabel = isElectricMeter ? tr("Load") : tr(rateLabelForUtility(selectedDevice.utilityType));
+  const gaugeProgress = isElectricMeter
+    ? clamp((currentLoadKw ?? 0) / 6, 0, 1)
+    : clamp((currentRate ?? 0) / gaugeMaxForUtility(selectedDevice.utilityType), 0, 1);
 
   return (
     <div className="space-y-6">
@@ -1366,6 +1492,9 @@ export function MeterView({ controller }: ViewProps) {
       </Panel>
 
       {selectedDataError ? <Panel className="bg-error/10 text-sm text-error">{selectedDataError}</Panel> : null}
+      {selectedDataLoading ? (
+        <Panel className="text-sm text-on-surface-variant">{tr("Refreshing selected meter data...")}</Panel>
+      ) : null}
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <Panel className="xl:col-span-4">
@@ -1386,15 +1515,26 @@ export function MeterView({ controller }: ViewProps) {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-end pb-8">
-                <p className="text-4xl font-black tracking-tight">{currentLoadKw !== null ? currentLoadKw.toFixed(2) : "--"}</p>
-                <p className="text-xs uppercase tracking-[0.12em] text-on-surface-variant">kW load</p>
+                <p className="text-4xl font-black tracking-tight">{liveMetricValue !== null ? liveMetricValue.toFixed(2) : "--"}</p>
+                <p className="text-xs uppercase tracking-[0.12em] text-on-surface-variant">
+                  {liveMetricUnit} {liveMetricLabel}
+                </p>
               </div>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1">
               <ReadingTile label={tr("Consumption")} value={formatQuantity(currentConsumption)} unit={selectedDevice.unitLabel} />
-              <ReadingTile label={tr("Voltage")} value={selectedLatest?.voltage?.toFixed(1) ?? "--"} unit="V" />
-              <ReadingTile label={tr("Current")} value={selectedLatest?.current?.toFixed(1) ?? "--"} unit="A" />
+              {isElectricMeter ? (
+                <>
+                  <ReadingTile label={tr("Voltage")} value={selectedLatest?.voltage?.toFixed(1) ?? "--"} unit="V" />
+                  <ReadingTile label={tr("Current")} value={selectedLatest?.current?.toFixed(1) ?? "--"} unit="A" />
+                </>
+              ) : (
+                <>
+                  <ReadingTile label={tr(rateLabelForUtility(selectedDevice.utilityType))} value={formatQuantity(currentRate)} unit={liveMetricUnit} />
+                  <ReadingTile label={tr("Last Seen")} value={formatRelativeTime(selectedLatest?.timestamp)} unit="" />
+                </>
+              )}
             </div>
           </div>
         </Panel>
@@ -1411,20 +1551,10 @@ export function MeterView({ controller }: ViewProps) {
             </Panel>
 
             <Panel className="md:col-span-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="inline-flex items-center gap-2 text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
-                  <UIIcon name="payments" className="text-[15px]" />
-                  {tr("Cost Estimation")}
-                </p>
-                <button
-                  type="button"
-                  className="rounded-full bg-surface-container-highest p-2 text-on-surface-variant transition hover:text-primary"
-                  title="Download report"
-                  aria-label="Download report"
-                >
-                  <UIIcon name="download" className="text-[18px]" />
-                </button>
-              </div>
+              <p className="inline-flex items-center gap-2 text-[0.6875rem] uppercase tracking-[0.08em] text-on-surface-variant">
+                <UIIcon name="payments" className="text-[15px]" />
+                {tr("Cost Estimation")}
+              </p>
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <CostTile label={tr("Today")} cost={selectedCosts.today?.estimatedCost} units={selectedCosts.today?.consumedUnits} unitLabel={selectedDevice.unitLabel} />
                 <CostTile label={tr("This Week")} cost={selectedCosts.week?.estimatedCost} units={selectedCosts.week?.consumedUnits} unitLabel={selectedDevice.unitLabel} />

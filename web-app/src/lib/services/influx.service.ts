@@ -5,6 +5,7 @@ export type MeterReading = {
   consumption: number | null;
   voltage: number | null;
   current: number | null;
+  rate: number | null;
 };
 
 export type AggregationFn = "mean" | "sum" | "min" | "max" | "last";
@@ -15,6 +16,7 @@ type MeterReadingRow = {
   energy?: unknown;
   voltage?: unknown;
   current?: unknown;
+  rate?: unknown;
 };
 
 function getInfluxConfig() {
@@ -70,6 +72,7 @@ function mapReadingRow(row: MeterReadingRow): MeterReading | null {
     consumption: normalizeNumber(row.consumption ?? row.energy),
     voltage: normalizeNumber(row.voltage),
     current: normalizeNumber(row.current),
+    rate: normalizeNumber(row.rate),
   };
 }
 
@@ -83,7 +86,7 @@ function baseReadingFlux(params: {
   |> range(start: time(v: "${params.start.toISOString()}"), stop: time(v: "${params.stop.toISOString()}"))
   |> filter(fn: (r) => r._measurement == "meter_reading")
   |> filter(fn: (r) => r.devEui == "${escapeFluxString(params.devEui)}")
-  |> filter(fn: (r) => r._field == "consumption" or r._field == "energy" or r._field == "voltage" or r._field == "current")`;
+  |> filter(fn: (r) => r._field == "consumption" or r._field == "energy" or r._field == "voltage" or r._field == "current" or r._field == "rate")`;
 }
 
 function sortedReadings(readings: MeterReading[]) {
