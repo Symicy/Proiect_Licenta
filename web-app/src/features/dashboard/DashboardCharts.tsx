@@ -441,7 +441,7 @@ export function ForecastComparisonChart({ data, unitLabel }: { data: ForecastSer
 
 export function BillingUtilityChart({ data }: { data: BillingChartPoint[] }) {
   if (data.length === 0) {
-    return <EmptyChart label="No billing data available yet." />;
+    return <EmptyChart label="No cost data available yet." />;
   }
 
   return (

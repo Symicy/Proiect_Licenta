@@ -173,7 +173,7 @@ export function consumptionIncrement(device, timestamp, stepHours) {
     noise *
     eventMultiplier;
 
-  return clamp(hourlyRate * stepHours, 0.005, profile.maxHourly * stepHours);
+  return clamp(hourlyRate * stepHours, 0, profile.maxHourly * stepHours);
 }
 
 export function readingVoltage(device, timestamp) {

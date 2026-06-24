@@ -45,7 +45,7 @@ const ro = {
     overview: { label: "Prezentare", subtitle: "Rezumat flota" },
     devices: { label: "Dispozitive", subtitle: "Inventar" },
     meter: { label: "Contor", subtitle: "Detalii live" },
-    billing: { label: "Facturare", subtitle: "Rezumat costuri" },
+    billing: { label: "Costuri", subtitle: "Analiza costurilor" },
   },
   account: {
     administrator: "Administrator",
@@ -75,7 +75,7 @@ const en = {
   bootPreparing: "Preparing dashboard session...",
   authHeroTitle: "Illuminate your utility insights.",
   authHeroCopy:
-    "High-fidelity analytics for LoRaWAN smart utility meters. Monitor fleet status, consumption trends, and estimated billing in one decisive control center.",
+    "High-fidelity analytics for LoRaWAN smart utility meters. Monitor fleet status, consumption trends, and estimated costs in one decisive control center.",
   authHeroFootnote: "Enterprise Grade | Precision Analytics",
   welcomeBack: "Welcome back",
   createAccount: "Create your account",
@@ -109,7 +109,7 @@ const en = {
     overview: { label: "Overview", subtitle: "Fleet snapshot" },
     devices: { label: "Devices", subtitle: "Inventory" },
     meter: { label: "Meter", subtitle: "Live details" },
-    billing: { label: "Billing", subtitle: "Cost summary" },
+    billing: { label: "Costs", subtitle: "Cost analysis" },
   },
   account: {
     administrator: "Administrator",
@@ -264,15 +264,17 @@ const ROMANIAN_PHRASES: Record<string, string> = {
   "ARIMA Order": "Ordin ARIMA",
   "Projected Cost": "Cost prognozat",
   "Today / Week / 30d": "Azi / Saptamana / 30z",
-  "Fleet billing": "Facturare flota",
+  "Fleet costs": "Costuri flota",
   "Cost By Utility": "Cost pe utilitate",
   "Estimated cumulative cost from the latest readings.": "Cost cumulativ estimat din ultimele citiri.",
   "Top Cost Drivers": "Cele mai mari costuri",
   "Highest estimated cumulative costs.": "Cele mai mari costuri cumulative estimate.",
   Ranking: "Clasament",
-  "Fleet Billing Projection": "Proiectie facturare flota",
+  "Fleet Cost Projection": "Proiectie costuri flota",
   "Instant estimate using latest cumulative consumption and configured tariff per unit.":
     "Estimare instantanee folosind consumul cumulativ recent si tariful configurat pe unitate.",
+  "Rolling seven-day estimate": "Estimare mobila pe sapte zile",
+  "Refreshing cost and telemetry summaries...": "Se actualizeaza rezumatele de cost si telemetrie...",
   Usage: "Consum",
 };
 

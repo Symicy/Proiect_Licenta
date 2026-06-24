@@ -182,6 +182,15 @@ export function useDashboardController(initialView: ViewKey = "overview") {
   const [selectedDataLoading, setSelectedDataLoading] = useState(false);
   const [selectedDataError, setSelectedDataError] = useState<string | null>(null);
   const selectedDataRequestId = useRef(0);
+  const selectedDevEuiRef = useRef<string | null>(dashboardSessionCache.selectedDevEui);
+  const selectedCostRequestId = useRef(0);
+  const selectedReadingsRequestId = useRef(0);
+  const selectedForecastRequestId = useRef(0);
+  const summaryRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selectedCostRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selectedReadingsRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selectedForecastRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const forecastRefreshAtByDeviceRef = useRef<Record<string, number>>({});
   const [fleetSummary, setFleetSummary] = useState<FleetSummary | null>(null);
   const [fleetSummaryLoading, setFleetSummaryLoading] = useState(false);
   const [fleetSummaryError, setFleetSummaryError] = useState<string | null>(null);
@@ -192,6 +201,8 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     lastHeartbeatAt,
     connectionInfo,
     latestByDevice,
+    lastReadingEvent,
+    readingVersion,
   } = useDeviceSse({
     enabled: Boolean(user),
     pollMs: 3000,
@@ -312,7 +323,24 @@ export function useDashboardController(initialView: ViewKey = "overview") {
 
   useEffect(() => {
     dashboardSessionCache.selectedDevEui = selectedDevEui;
+    selectedDevEuiRef.current = selectedDevEui;
   }, [selectedDevEui]);
+
+  useEffect(() => {
+    return () => {
+      for (const timeoutRef of [
+        summaryRefreshTimeoutRef,
+        selectedCostRefreshTimeoutRef,
+        selectedReadingsRefreshTimeoutRef,
+        selectedForecastRefreshTimeoutRef,
+      ]) {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -429,6 +457,7 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       });
       setSelectedForecast(forecastResult.payload);
       setSelectedForecastError(forecastResult.error);
+      forecastRefreshAtByDeviceRef.current[devEui] = Date.now();
     } catch (error) {
       if (requestId !== selectedDataRequestId.current) {
         return;
@@ -447,6 +476,84 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     } finally {
       if (requestId === selectedDataRequestId.current) {
         setSelectedDataLoading(false);
+      }
+    }
+  }, []);
+
+  const refreshSelectedReadings = useCallback(async (devEui: string) => {
+    const requestId = selectedReadingsRequestId.current + 1;
+    selectedReadingsRequestId.current = requestId;
+
+    try {
+      const stop = new Date().toISOString();
+      const payload = await apiRequest<RangeReadingsResponse>(
+        `/api/devices/${devEui}/readings?mode=range&limit=240&aggregateWindow=3h&aggregateFn=mean&start=${encodeURIComponent(
+          rangeStart(24 * 30),
+        )}&stop=${encodeURIComponent(stop)}`,
+      );
+
+      if (requestId === selectedReadingsRequestId.current && selectedDevEuiRef.current === devEui) {
+        setSelectedReadings(payload.readings);
+      }
+    } catch {
+      // Keep the optimistic live point. The next full device load or refresh will reconcile the series.
+    }
+  }, []);
+
+  const refreshSelectedCosts = useCallback(async (devEui: string) => {
+    const requestId = selectedCostRequestId.current + 1;
+    selectedCostRequestId.current = requestId;
+
+    try {
+      const stop = new Date().toISOString();
+      const [todayCostPayload, weekCostPayload, monthCostPayload] = await Promise.all([
+        apiRequest<CostResponse>(
+          `/api/devices/${devEui}/cost?calculationMode=delta&start=${encodeURIComponent(
+            rangeStart(24),
+          )}&stop=${encodeURIComponent(stop)}`,
+        ),
+        apiRequest<CostResponse>(
+          `/api/devices/${devEui}/cost?calculationMode=delta&start=${encodeURIComponent(
+            rangeStart(24 * 7),
+          )}&stop=${encodeURIComponent(stop)}`,
+        ),
+        apiRequest<CostResponse>(
+          `/api/devices/${devEui}/cost?calculationMode=delta&start=${encodeURIComponent(
+            rangeStart(24 * 30),
+          )}&stop=${encodeURIComponent(stop)}`,
+        ),
+      ]);
+
+      if (requestId === selectedCostRequestId.current && selectedDevEuiRef.current === devEui) {
+        setSelectedCosts({
+          today: todayCostPayload.cost,
+          week: weekCostPayload.cost,
+          month: monthCostPayload.cost,
+        });
+      }
+    } catch {
+      // Keep the previous cost estimate until the next successful refresh.
+    }
+  }, []);
+
+  const refreshSelectedForecast = useCallback(async (devEui: string) => {
+    const requestId = selectedForecastRequestId.current + 1;
+    selectedForecastRequestId.current = requestId;
+
+    try {
+      const payload = await apiRequest<ForecastResponse>(
+        `/api/devices/${devEui}/forecast?lookbackHours=${24 * 30}&horizonHours=24&stepHours=3`,
+      );
+
+      if (requestId === selectedForecastRequestId.current && selectedDevEuiRef.current === devEui) {
+        setSelectedForecast(payload);
+        setSelectedForecastError(null);
+        forecastRefreshAtByDeviceRef.current[devEui] = Date.now();
+      }
+    } catch (error) {
+      if (requestId === selectedForecastRequestId.current && selectedDevEuiRef.current === devEui) {
+        setSelectedForecastError(extractErrorMessage(error));
+        forecastRefreshAtByDeviceRef.current[devEui] = Date.now();
       }
     }
   }, []);
@@ -504,6 +611,75 @@ export function useDashboardController(initialView: ViewKey = "overview") {
       setSelectedLatest(streamPayload.reading);
     }
   }, [latestByDevice, selectedDevEui]);
+
+  useEffect(() => {
+    if (!user || readingVersion === 0) {
+      return;
+    }
+
+    if (summaryRefreshTimeoutRef.current) {
+      clearTimeout(summaryRefreshTimeoutRef.current);
+    }
+
+    summaryRefreshTimeoutRef.current = setTimeout(() => {
+      void loadFleetSummary();
+      summaryRefreshTimeoutRef.current = null;
+    }, 12_000);
+  }, [loadFleetSummary, readingVersion, user]);
+
+  useEffect(() => {
+    if (!selectedDevEui || !lastReadingEvent || lastReadingEvent.devEui !== selectedDevEui) {
+      return;
+    }
+
+    const liveReading = lastReadingEvent.reading;
+    setSelectedLatest(liveReading);
+    setSelectedReadings((previous) => {
+      if (previous.some((reading) => reading.timestamp === liveReading.timestamp)) {
+        return previous;
+      }
+
+      return [...previous, liveReading]
+        .sort((first, second) => Date.parse(first.timestamp) - Date.parse(second.timestamp))
+        .slice(-260);
+    });
+
+    if (selectedReadingsRefreshTimeoutRef.current) {
+      clearTimeout(selectedReadingsRefreshTimeoutRef.current);
+    }
+
+    selectedReadingsRefreshTimeoutRef.current = setTimeout(() => {
+      void refreshSelectedReadings(selectedDevEui);
+      selectedReadingsRefreshTimeoutRef.current = null;
+    }, 45_000);
+
+    if (selectedCostRefreshTimeoutRef.current) {
+      clearTimeout(selectedCostRefreshTimeoutRef.current);
+    }
+
+    selectedCostRefreshTimeoutRef.current = setTimeout(() => {
+      void refreshSelectedCosts(selectedDevEui);
+      selectedCostRefreshTimeoutRef.current = null;
+    }, 20_000);
+
+    const lastForecastRefreshAt = forecastRefreshAtByDeviceRef.current[selectedDevEui] ?? 0;
+    if (Date.now() - lastForecastRefreshAt >= 5 * 60 * 1000) {
+      if (selectedForecastRefreshTimeoutRef.current) {
+        clearTimeout(selectedForecastRefreshTimeoutRef.current);
+      }
+
+      selectedForecastRefreshTimeoutRef.current = setTimeout(() => {
+        void refreshSelectedForecast(selectedDevEui);
+        selectedForecastRefreshTimeoutRef.current = null;
+      }, 30_000);
+    }
+  }, [
+    lastReadingEvent,
+    refreshSelectedCosts,
+    refreshSelectedForecast,
+    refreshSelectedReadings,
+    selectedDevEui,
+  ]);
 
   const deviceRows = useMemo<DeviceRow[]>(() => {
     return devices.map((device) => {
@@ -951,6 +1127,17 @@ export function useDashboardController(initialView: ViewKey = "overview") {
 
   const handleSelectDevice = (devEui: string, targetView: ViewKey = "meter") => {
     if (devEui !== selectedDevEui) {
+      for (const timeoutRef of [
+        selectedCostRefreshTimeoutRef,
+        selectedReadingsRefreshTimeoutRef,
+        selectedForecastRefreshTimeoutRef,
+      ]) {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      }
+
       setSelectedLatest(null);
       setSelectedReadings([]);
       setSelectedForecast(null);

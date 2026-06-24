@@ -32,6 +32,7 @@ import {
   TriangleAlert,
   User,
   Wifi,
+  X,
   Zap,
 } from "lucide-react";
 
@@ -86,6 +87,7 @@ const ICON_COMPONENTS: Record<string, LucideIcon> = {
   business: Building2,
   key: KeyRound,
   languages: Languages,
+  close: X,
 };
 
 const CUSTOMER_TYPE_OPTIONS = [

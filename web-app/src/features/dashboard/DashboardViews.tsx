@@ -1089,11 +1089,12 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
           </div>
           <button
             type="button"
-            className="rounded-full bg-surface-container-highest px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-container-highest text-on-surface-variant transition hover:bg-surface-container hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/60 disabled:cursor-not-allowed disabled:opacity-60"
             onClick={onClose}
             disabled={submitting}
+            aria-label={tr("Close")}
           >
-            {tr("Close")}
+            <UIIcon name="close" className="text-[20px]" />
           </button>
         </div>
 
@@ -1180,7 +1181,7 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
               type="number"
               min="-90"
               max="90"
-              step="0.000001"
+              step="any"
               className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
               placeholder="44.4268"
               value={form.latitude}
@@ -1194,7 +1195,7 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
               type="number"
               min="-180"
               max="180"
-              step="0.000001"
+              step="any"
               className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
               placeholder="26.1025"
               value={form.longitude}
@@ -1777,7 +1778,7 @@ export function BillingView({ controller }: ViewProps) {
         <KpiCard
           label={tr("This Week")}
           value={formatCurrency(fleetSummary?.totals.weekEstimatedCost)}
-          detail="Rolling seven-day estimate"
+          detail={tr("Rolling seven-day estimate")}
           icon="insights"
         />
         <KpiCard
@@ -1788,11 +1789,11 @@ export function BillingView({ controller }: ViewProps) {
         />
       </section>
 
-      {selectedDataLoading ? <Panel className="text-sm text-on-surface-variant">Refreshing billing and telemetry summaries...</Panel> : null}
+      {selectedDataLoading ? <Panel className="text-sm text-on-surface-variant">{tr("Refreshing cost and telemetry summaries...")}</Panel> : null}
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <Panel className="xl:col-span-8">
-          <SectionHeader title={tr("Cost By Utility")} subtitle={tr("Estimated cumulative cost from the latest readings.")} eyebrow={tr("Fleet billing")} />
+          <SectionHeader title={tr("Cost By Utility")} subtitle={tr("Estimated cumulative cost from the latest readings.")} eyebrow={tr("Fleet costs")} />
           <div className="mt-5">
             <BillingUtilityChart data={billingChartPoints} />
           </div>
@@ -1822,7 +1823,7 @@ export function BillingView({ controller }: ViewProps) {
 
       <Panel>
         <SectionHeader
-          title={tr("Fleet Billing Projection")}
+          title={tr("Fleet Cost Projection")}
           subtitle={tr("Instant estimate using latest cumulative consumption and configured tariff per unit.")}
           eyebrow={`${deviceRows.length} devices`}
         />

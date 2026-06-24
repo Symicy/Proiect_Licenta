@@ -46,6 +46,9 @@ export function useDeviceSse(options: UseDeviceSseOptions = {}) {
   const [lastHeartbeatAt, setLastHeartbeatAt] = useState<string | null>(null);
   const [connectionInfo, setConnectionInfo] = useState<ConnectedEvent | null>(null);
   const [latestByDevice, setLatestByDevice] = useState<Record<string, MeterReadingEvent>>({});
+  const [lastReadingEvent, setLastReadingEvent] = useState<MeterReadingEvent | null>(null);
+  const [lastReadingAt, setLastReadingAt] = useState<string | null>(null);
+  const [readingVersion, setReadingVersion] = useState(0);
 
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -95,6 +98,9 @@ export function useDeviceSse(options: UseDeviceSseOptions = {}) {
           ...previous,
           [payload.devEui]: payload,
         }));
+        setLastReadingEvent(payload);
+        setLastReadingAt(payload.reading.timestamp);
+        setReadingVersion((current) => current + 1);
       } catch {
         setErrorMessage("Failed to parse meter-reading payload.");
       }
@@ -151,5 +157,8 @@ export function useDeviceSse(options: UseDeviceSseOptions = {}) {
     connectionInfo,
     lastHeartbeatAt,
     latestByDevice,
+    lastReadingEvent,
+    lastReadingAt,
+    readingVersion,
   };
 }
