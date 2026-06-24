@@ -10,7 +10,7 @@
 			"name": "Electricity Meter 01",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1832.474,228.9,2.053",
+				"payload": "E,1832.372,229,1.523",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -35,8 +35,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5433119,
+				"latitude": 47.6503428,
+				"longitude": 23.5518119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -46,8 +46,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -80,7 +80,7 @@
 			"name": "Electricity Meter 02",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1659.944,230.6,2.211",
+				"payload": "E,1660.491,231.1,1.783",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -105,8 +105,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5445119,
+				"latitude": 47.6503428,
+				"longitude": 23.5530119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -116,8 +116,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -150,7 +150,7 @@
 			"name": "Gas Meter 01",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "G,646.388,0.1081",
+				"payload": "G,646.035,0.0921",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -175,8 +175,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6563428,
-				"longitude": 23.5473119,
+				"latitude": 47.6551428,
+				"longitude": 23.5558119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -186,8 +186,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -220,7 +220,7 @@
 			"name": "Gas Meter 02",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "G,724.045,0.1059",
+				"payload": "G,723.537,0.0882",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -245,8 +245,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6563428,
-				"longitude": 23.5485119,
+				"latitude": 47.6551428,
+				"longitude": 23.5570119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -256,8 +256,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -290,7 +290,7 @@
 			"name": "Gas Meter 03",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "G,630.488,0.0779",
+				"payload": "G,630.171,0.0663",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -315,8 +315,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6563428,
-				"longitude": 23.5497119,
+				"latitude": 47.6551428,
+				"longitude": 23.5582119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -326,8 +326,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -360,7 +360,7 @@
 			"name": "Gas Meter 04",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "G,551.624,0.1075",
+				"payload": "G,551.187,0.0956",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -385,8 +385,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6563428,
-				"longitude": 23.5509119,
+				"latitude": 47.6551428,
+				"longitude": 23.5594119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -396,8 +396,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -430,7 +430,1897 @@
 			"name": "Gas Meter 05",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "G,692.933,0.0892",
+				"payload": "G,692.558,0.081",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6551428,
+				"longitude": 23.5606119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"15": {
+		"id": 15,
+		"info": {
+			"devEUI": "0810effdce784360",
+			"devAddr": "755bc9b0",
+			"nwkSKey": "1635cde54ebfa1cf04f154b156d975cc",
+			"appSKey": "3bfdfe6002407d7e5ccb880e4e695eb3",
+			"appKey": "b76d27299633b69a979e4b197ea6d383",
+			"name": "Gas Meter 06",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "G,717.367,0.069",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6566428,
+				"longitude": 23.5558119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"16": {
+		"id": 16,
+		"info": {
+			"devEUI": "e691e8195eeb944c",
+			"devAddr": "1c475216",
+			"nwkSKey": "8601c4a5903b9978c9ee1d1477083541",
+			"appSKey": "5dd11bd5da2a8e9eea46664b2f1ce115",
+			"appKey": "327f38a50a5120222c7952ba9ae7f399",
+			"name": "Gas Meter 07",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "G,741.859,0.0971",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6566428,
+				"longitude": 23.5570119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"17": {
+		"id": 17,
+		"info": {
+			"devEUI": "371f831d1b8981d2",
+			"devAddr": "9fd2f91c",
+			"nwkSKey": "9e2dc49503ebafe91dd8f691262785ec",
+			"appSKey": "969f265210815aeea2238c5517228af9",
+			"appKey": "2dd72a77150e18a2633c127f66cf4681",
+			"name": "Gas Meter 08",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "G,608.257,0.0798",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6566428,
+				"longitude": 23.5582119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"18": {
+		"id": 18,
+		"info": {
+			"devEUI": "aa7d24ae53123e53",
+			"devAddr": "4d82e160",
+			"nwkSKey": "b2fc8911259879e855db6ec0843dd161",
+			"appSKey": "898cf35da431e71fff6d387cc00f0c14",
+			"appKey": "6ea9e9e84d15bd6116d4cf2de6801d43",
+			"name": "Gas Meter 09",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "G,620.185,0.0815",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6566428,
+				"longitude": 23.5594119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"19": {
+		"id": 19,
+		"info": {
+			"devEUI": "5530af7250945139",
+			"devAddr": "9588d0a5",
+			"nwkSKey": "03159df26f6e17f0df84a00b2ae4b6d3",
+			"appSKey": "824fd17f303f5cf37367ece27aee4dce",
+			"appKey": "76d37dc62d499df237a03372854ff74c",
+			"name": "Gas Meter 10",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "G,755.715,0.1129",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6566428,
+				"longitude": 23.5606119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"2": {
+		"id": 2,
+		"info": {
+			"devEUI": "19e463934bf1e196",
+			"devAddr": "f82613ae",
+			"nwkSKey": "c321473d5492b0b0369338a55a24f6e9",
+			"appSKey": "ed38b063982aeb93a16a33c68b650e28",
+			"appKey": "0ca922a297c3be9de4000406075a2017",
+			"name": "Electricity Meter 03",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "E,1898.234,230.9,1.769",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6503428,
+				"longitude": 23.5542119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"20": {
+		"id": 20,
+		"info": {
+			"devEUI": "10e91024df70313e",
+			"devAddr": "ef87ec70",
+			"nwkSKey": "4698fc4a7e4d2a30bb05dd7e4c1b842d",
+			"appSKey": "81575b22cde81d790af3336a4c19cb77",
+			"appKey": "e1a93fc332879e76353c814dc0aff2ab",
+			"name": "Water Meter 01",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,125.666,0.0442",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6458428,
+				"longitude": 23.5563119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"21": {
+		"id": 21,
+		"info": {
+			"devEUI": "212294c0a5e18fd8",
+			"devAddr": "853de676",
+			"nwkSKey": "0aa919d3d0bf5b4b993624024bd1b709",
+			"appSKey": "4077d984f862e915a7894627919707b1",
+			"appKey": "17017e9af3d7ff918cd3dd862d6afcce",
+			"name": "Water Meter 02",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,213.236,0.0535",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6458428,
+				"longitude": 23.5575119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"22": {
+		"id": 22,
+		"info": {
+			"devEUI": "e917d339f3610216",
+			"devAddr": "65acbbcb",
+			"nwkSKey": "80bc79ae6291b3dcbf90ae0f47e47c47",
+			"appSKey": "aaec11668b42b6999ddbfcca8938b9e0",
+			"appKey": "28c1ef3ab871c557fbd88535588911d0",
+			"name": "Water Meter 03",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,128.828,0.0468",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6458428,
+				"longitude": 23.5587119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"23": {
+		"id": 23,
+		"info": {
+			"devEUI": "dfa0d70c43413288",
+			"devAddr": "e81f503f",
+			"nwkSKey": "582a212395cbd17ea6b267b56325496b",
+			"appSKey": "49d56450b36e07c3fb9cc0c2de23e1d6",
+			"appKey": "c4fa1af5f4a7f079533630c734b58d86",
+			"name": "Water Meter 04",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,140.864,0.0433",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6458428,
+				"longitude": 23.5599119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"24": {
+		"id": 24,
+		"info": {
+			"devEUI": "0600041eea0c9b2c",
+			"devAddr": "a4b45f18",
+			"nwkSKey": "c5a43c351bf5ed07eb24ccb25abed533",
+			"appSKey": "6a9328c9467e6dc8bb3956c5100ccf44",
+			"appKey": "b37e035d7f80251da2cfcce880a82b16",
+			"name": "Water Meter 05",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,194.141,0.0566",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6458428,
+				"longitude": 23.5611119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"25": {
+		"id": 25,
+		"info": {
+			"devEUI": "4f62168066c3afe0",
+			"devAddr": "6936a249",
+			"nwkSKey": "ba5f8d0856dcd57cc418f6aa4c9d0cea",
+			"appSKey": "72d37cbd96138861e0a59cfc99a96a9f",
+			"appKey": "3fb0aec6538127b7747615cf4b75288c",
+			"name": "Water Meter 06",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,236.997,0.0411",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6473428,
+				"longitude": 23.5563119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"26": {
+		"id": 26,
+		"info": {
+			"devEUI": "084837c578fe6e8e",
+			"devAddr": "95519da3",
+			"nwkSKey": "d671bbb0d7d5bc541d6716370c6b305d",
+			"appSKey": "ec5bb353f817bf34c7d7933330ae9221",
+			"appKey": "9927c51f58a71a3b587d8bac5b738e69",
+			"name": "Water Meter 07",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,124.441,0.0373",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6473428,
+				"longitude": 23.5575119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"27": {
+		"id": 27,
+		"info": {
+			"devEUI": "3e4b7a72c0acc0eb",
+			"devAddr": "68b75106",
+			"nwkSKey": "5197c0951822c884c5b496c05279fe6e",
+			"appSKey": "f7519c754bd660ba5daa0afee77890df",
+			"appKey": "d93c3a7a597f3fc18caae4577ee3cb04",
+			"name": "Water Meter 08",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,182.064,0.0473",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6473428,
+				"longitude": 23.5587119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"28": {
+		"id": 28,
+		"info": {
+			"devEUI": "4b4515772b058528",
+			"devAddr": "cabaae08",
+			"nwkSKey": "44264fb64e0bc0ff18fefc07021ce1cb",
+			"appSKey": "a7a0ddb4aeaf95478288f05c965b37b3",
+			"appKey": "50f0a5038f879cb8e988e381d15e868d",
+			"name": "Water Meter 09",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,145.939,0.0387",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6473428,
+				"longitude": 23.5599119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"29": {
+		"id": 29,
+		"info": {
+			"devEUI": "0b6d2d59f30eeef2",
+			"devAddr": "213cd98d",
+			"nwkSKey": "c717a2ab1d3b81da3f225e3ecce632cc",
+			"appSKey": "58fc5aa7ca559c6bc625cd4e744c10f7",
+			"appKey": "a20e7bbca967adc8a5d2487c3769debe",
+			"name": "Water Meter 10",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "W,187.56,0.0537",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6473428,
+				"longitude": 23.5611119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"3": {
+		"id": 3,
+		"info": {
+			"devEUI": "c6e4e729d3f7da40",
+			"devAddr": "f219c5a9",
+			"nwkSKey": "9c5a13b8a074835cd85d5a5d46aa4dc3",
+			"appSKey": "728a18ead7cb8de67160db6f026e63b1",
+			"appKey": "4e3958f3b037085a9a6c2cd50eb8cfcd",
+			"name": "Electricity Meter 04",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "E,1731.139,231,1.733",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6503428,
+				"longitude": 23.5554119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"30": {
+		"id": 30,
+		"info": {
+			"devEUI": "8ddc94814d6db20c",
+			"devAddr": "6e3b3f01",
+			"nwkSKey": "b374358f403b2283e6a30c67ed16b624",
+			"appSKey": "2349a5ff09a0b5af107cf5ad163a46e7",
+			"appKey": "82bbed3deac21d6961d9b63571730100",
+			"name": "Heating Meter 01",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1669.457,0.4021",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6548428,
+				"longitude": 23.5473119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"31": {
+		"id": 31,
+		"info": {
+			"devEUI": "df957ccf40dc1e9c",
+			"devAddr": "cdf4bdb6",
+			"nwkSKey": "664a924bd6044e4da82a9ff16062f960",
+			"appSKey": "dc602526fe26750172f999adb9691755",
+			"appKey": "74f3d03eeaa6da60a1b335ad415419b3",
+			"name": "Heating Meter 02",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1373.86,0.3207",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6548428,
+				"longitude": 23.5485119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"32": {
+		"id": 32,
+		"info": {
+			"devEUI": "3794aa8e311f94b8",
+			"devAddr": "1c2b2356",
+			"nwkSKey": "082331125f8290024e7c010a377a7feb",
+			"appSKey": "0d989b420ea9213b18c7fa76064cd0cd",
+			"appKey": "fbb5e836d9bb2ee12d029b1c6bed3536",
+			"name": "Heating Meter 03",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1197.593,0.3445",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6548428,
+				"longitude": 23.5497119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"33": {
+		"id": 33,
+		"info": {
+			"devEUI": "f46e087b5acf5f66",
+			"devAddr": "0fad7493",
+			"nwkSKey": "630a8b4ae6988a2659e0f77ad29d9f1c",
+			"appSKey": "c0add5a1f75892cab78577a439d5b308",
+			"appKey": "67a62f3f3d5175a17800200b78a5301e",
+			"name": "Heating Meter 04",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1666.891,0.4027",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6548428,
+				"longitude": 23.5509119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"34": {
+		"id": 34,
+		"info": {
+			"devEUI": "3d57e472814708a1",
+			"devAddr": "26434b28",
+			"nwkSKey": "b69d266e02e1080235ad7c8bb9b9f3a0",
+			"appSKey": "fd41748550aa09f111c52c99e4001977",
+			"appKey": "58c0b8ffd89e0c13634d96587495f657",
+			"name": "Heating Meter 05",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1288.524,0.3783",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6548428,
+				"longitude": 23.5521119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"35": {
+		"id": 35,
+		"info": {
+			"devEUI": "b9a3070379f83285",
+			"devAddr": "d5483a03",
+			"nwkSKey": "299726f0669ae6fb9cea7695a36c83bf",
+			"appSKey": "c07f1ff70b773744f7442cafe825bba4",
+			"appKey": "33ae4f04490369948f0a0c76478d552b",
+			"name": "Heating Meter 06",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1732.221,0.4759",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6563428,
+				"longitude": 23.5473119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"36": {
+		"id": 36,
+		"info": {
+			"devEUI": "8ef27683e0904016",
+			"devAddr": "20e88c9a",
+			"nwkSKey": "df13faf8562a574d8b6ce7b18440eb74",
+			"appSKey": "7d8f73e805c97037efa7be61e388cfb1",
+			"appKey": "a5969be373f24b57dc2a737fe3b8c5f6",
+			"name": "Heating Meter 07",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1595.902,0.3515",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6563428,
+				"longitude": 23.5485119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"37": {
+		"id": 37,
+		"info": {
+			"devEUI": "89ec02be9ddf87a2",
+			"devAddr": "4c387bb6",
+			"nwkSKey": "43679d0caa2245a86ad5adf37c93eeaa",
+			"appSKey": "f855ac1e770d057d8203e110fbec102c",
+			"appKey": "25138938c1d7f0c51e71c8425382bce5",
+			"name": "Heating Meter 08",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1469.285,0.341",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6563428,
+				"longitude": 23.5497119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"38": {
+		"id": 38,
+		"info": {
+			"devEUI": "e3869d2ba4398667",
+			"devAddr": "bfb8c373",
+			"nwkSKey": "27ce3bbb4db826dfb2bd8d3396f826d1",
+			"appSKey": "08a0f274f4a89cf6e788b5fbf1ad8ea4",
+			"appKey": "ca262d17d93cf19655d4fcd3180d1dfb",
+			"name": "Heating Meter 09",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1350.887,0.3781",
+				"active": true,
+				"infoUplink": {
+					"fport": 2,
+					"fcnt": 0
+				},
+				"fcntDown": 0,
+				"base64": false
+			},
+			"configuration": {
+				"region": 1,
+				"sendInterval": 10,
+				"ackTimeout": 2,
+				"range": 10000,
+				"disableFCntDown": false,
+				"supportedOtaa": true,
+				"supportedADR": true,
+				"supportedFragment": false,
+				"supportedClassB": false,
+				"supportedClassC": false,
+				"dataRate": 5,
+				"rx1DROffset": 0,
+				"nbRetransmission": 1
+			},
+			"location": {
+				"latitude": 47.6563428,
+				"longitude": 23.5509119,
+				"altitude": 0
+			},
+			"rxs": [
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": true,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 5
+				},
+				{
+					"delay": 5000,
+					"durationOpen": 3000,
+					"channel": {
+						"active": true,
+						"enableUplink": false,
+						"freqUplink": 869525000,
+						"freqDownlink": 869525000,
+						"minDR": 0,
+						"maxDR": 5
+					},
+					"dataRate": 0
+				}
+			]
+		}
+	},
+	"39": {
+		"id": 39,
+		"info": {
+			"devEUI": "8be8a886c1700c06",
+			"devAddr": "852f6e56",
+			"nwkSKey": "e348a9b46703b072c492707dcf3aeb03",
+			"appSKey": "25b15fab258106e2c72b67fcc19ba3f6",
+			"appKey": "e8b0b896a4ecf4a026e61d5f620fb602",
+			"name": "Heating Meter 10",
+			"status": {
+				"mtype": "UnConfirmedDataUp",
+				"payload": "H,1486.375,0.3589",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -466,1898 +2356,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"15": {
-		"id": 15,
-		"info": {
-			"devEUI": "0810effdce784360",
-			"devAddr": "755bc9b0",
-			"nwkSKey": "1635cde54ebfa1cf04f154b156d975cc",
-			"appSKey": "3bfdfe6002407d7e5ccb880e4e695eb3",
-			"appKey": "b76d27299633b69a979e4b197ea6d383",
-			"name": "Gas Meter 06",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "G,717.718,0.0777",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6578428,
-				"longitude": 23.5473119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"16": {
-		"id": 16,
-		"info": {
-			"devEUI": "e691e8195eeb944c",
-			"devAddr": "1c475216",
-			"nwkSKey": "8601c4a5903b9978c9ee1d1477083541",
-			"appSKey": "5dd11bd5da2a8e9eea46664b2f1ce115",
-			"appKey": "327f38a50a5120222c7952ba9ae7f399",
-			"name": "Gas Meter 07",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "G,742.289,0.1135",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6578428,
-				"longitude": 23.5485119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"17": {
-		"id": 17,
-		"info": {
-			"devEUI": "371f831d1b8981d2",
-			"devAddr": "9fd2f91c",
-			"nwkSKey": "9e2dc49503ebafe91dd8f691262785ec",
-			"appSKey": "969f265210815aeea2238c5517228af9",
-			"appKey": "2dd72a77150e18a2633c127f66cf4681",
-			"name": "Gas Meter 08",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "G,608.678,0.0946",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6578428,
-				"longitude": 23.5497119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"18": {
-		"id": 18,
-		"info": {
-			"devEUI": "aa7d24ae53123e53",
-			"devAddr": "4d82e160",
-			"nwkSKey": "b2fc8911259879e855db6ec0843dd161",
-			"appSKey": "898cf35da431e71fff6d387cc00f0c14",
-			"appKey": "6ea9e9e84d15bd6116d4cf2de6801d43",
-			"name": "Gas Meter 09",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "G,620.664,0.0965",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6578428,
-				"longitude": 23.5509119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"19": {
-		"id": 19,
-		"info": {
-			"devEUI": "5530af7250945139",
-			"devAddr": "9588d0a5",
-			"nwkSKey": "03159df26f6e17f0df84a00b2ae4b6d3",
-			"appSKey": "824fd17f303f5cf37367ece27aee4dce",
-			"appKey": "76d37dc62d499df237a03372854ff74c",
-			"name": "Gas Meter 10",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "G,756.035,0.0923",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6578428,
-				"longitude": 23.5521119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"2": {
-		"id": 2,
-		"info": {
-			"devEUI": "19e463934bf1e196",
-			"devAddr": "f82613ae",
-			"nwkSKey": "c321473d5492b0b0369338a55a24f6e9",
-			"appSKey": "ed38b063982aeb93a16a33c68b650e28",
-			"appKey": "0ca922a297c3be9de4000406075a2017",
-			"name": "Electricity Meter 03",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1898.668,229.3,2.342",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5457119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"20": {
-		"id": 20,
-		"info": {
-			"devEUI": "10e91024df70313e",
-			"devAddr": "ef87ec70",
-			"nwkSKey": "4698fc4a7e4d2a30bb05dd7e4c1b842d",
-			"appSKey": "81575b22cde81d790af3336a4c19cb77",
-			"appKey": "e1a93fc332879e76353c814dc0aff2ab",
-			"name": "Water Meter 01",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,125.799,0.0499",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5478119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"21": {
-		"id": 21,
-		"info": {
-			"devEUI": "212294c0a5e18fd8",
-			"devAddr": "853de676",
-			"nwkSKey": "0aa919d3d0bf5b4b993624024bd1b709",
-			"appSKey": "4077d984f862e915a7894627919707b1",
-			"appKey": "17017e9af3d7ff918cd3dd862d6afcce",
-			"name": "Water Meter 02",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,213.456,0.0612",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5490119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"22": {
-		"id": 22,
-		"info": {
-			"devEUI": "e917d339f3610216",
-			"devAddr": "65acbbcb",
-			"nwkSKey": "80bc79ae6291b3dcbf90ae0f47e47c47",
-			"appSKey": "aaec11668b42b6999ddbfcca8938b9e0",
-			"appKey": "28c1ef3ab871c557fbd88535588911d0",
-			"name": "Water Meter 03",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,128.969,0.0491",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5502119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"23": {
-		"id": 23,
-		"info": {
-			"devEUI": "dfa0d70c43413288",
-			"devAddr": "e81f503f",
-			"nwkSKey": "582a212395cbd17ea6b267b56325496b",
-			"appSKey": "49d56450b36e07c3fb9cc0c2de23e1d6",
-			"appKey": "c4fa1af5f4a7f079533630c734b58d86",
-			"name": "Water Meter 04",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,140.975,0.0478",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5514119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"24": {
-		"id": 24,
-		"info": {
-			"devEUI": "0600041eea0c9b2c",
-			"devAddr": "a4b45f18",
-			"nwkSKey": "c5a43c351bf5ed07eb24ccb25abed533",
-			"appSKey": "6a9328c9467e6dc8bb3956c5100ccf44",
-			"appKey": "b37e035d7f80251da2cfcce880a82b16",
-			"name": "Water Meter 05",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,194.266,0.0577",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6470428,
-				"longitude": 23.5526119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"25": {
-		"id": 25,
-		"info": {
-			"devEUI": "4f62168066c3afe0",
-			"devAddr": "6936a249",
-			"nwkSKey": "ba5f8d0856dcd57cc418f6aa4c9d0cea",
-			"appSKey": "72d37cbd96138861e0a59cfc99a96a9f",
-			"appKey": "3fb0aec6538127b7747615cf4b75288c",
-			"name": "Water Meter 06",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,237.15,0.0486",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6485428,
-				"longitude": 23.5478119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"26": {
-		"id": 26,
-		"info": {
-			"devEUI": "084837c578fe6e8e",
-			"devAddr": "95519da3",
-			"nwkSKey": "d671bbb0d7d5bc541d6716370c6b305d",
-			"appSKey": "ec5bb353f817bf34c7d7933330ae9221",
-			"appKey": "9927c51f58a71a3b587d8bac5b738e69",
-			"name": "Water Meter 07",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,124.645,0.041",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6485428,
-				"longitude": 23.5490119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"27": {
-		"id": 27,
-		"info": {
-			"devEUI": "3e4b7a72c0acc0eb",
-			"devAddr": "68b75106",
-			"nwkSKey": "5197c0951822c884c5b496c05279fe6e",
-			"appSKey": "f7519c754bd660ba5daa0afee77890df",
-			"appKey": "d93c3a7a597f3fc18caae4577ee3cb04",
-			"name": "Water Meter 08",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,182.252,0.0534",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6485428,
-				"longitude": 23.5502119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"28": {
-		"id": 28,
-		"info": {
-			"devEUI": "4b4515772b058528",
-			"devAddr": "cabaae08",
-			"nwkSKey": "44264fb64e0bc0ff18fefc07021ce1cb",
-			"appSKey": "a7a0ddb4aeaf95478288f05c965b37b3",
-			"appKey": "50f0a5038f879cb8e988e381d15e868d",
-			"name": "Water Meter 09",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,146.119,0.0448",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6485428,
-				"longitude": 23.5514119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"29": {
-		"id": 29,
-		"info": {
-			"devEUI": "0b6d2d59f30eeef2",
-			"devAddr": "213cd98d",
-			"nwkSKey": "c717a2ab1d3b81da3f225e3ecce632cc",
-			"appSKey": "58fc5aa7ca559c6bc625cd4e744c10f7",
-			"appKey": "a20e7bbca967adc8a5d2487c3769debe",
-			"name": "Water Meter 10",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "W,187.766,0.0569",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6485428,
-				"longitude": 23.5526119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"3": {
-		"id": 3,
-		"info": {
-			"devEUI": "c6e4e729d3f7da40",
-			"devAddr": "f219c5a9",
-			"nwkSKey": "9c5a13b8a074835cd85d5a5d46aa4dc3",
-			"appSKey": "728a18ead7cb8de67160db6f026e63b1",
-			"appKey": "4e3958f3b037085a9a6c2cd50eb8cfcd",
-			"name": "Electricity Meter 04",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1730.927,229.2,2.449",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5469119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"30": {
-		"id": 30,
-		"info": {
-			"devEUI": "8ddc94814d6db20c",
-			"devAddr": "6e3b3f01",
-			"nwkSKey": "b374358f403b2283e6a30c67ed16b624",
-			"appSKey": "2349a5ff09a0b5af107cf5ad163a46e7",
-			"appKey": "82bbed3deac21d6961d9b63571730100",
-			"name": "Heating Meter 01",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1670.981,0.5759",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6560428,
-				"longitude": 23.5388119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"31": {
-		"id": 31,
-		"info": {
-			"devEUI": "df957ccf40dc1e9c",
-			"devAddr": "cdf4bdb6",
-			"nwkSKey": "664a924bd6044e4da82a9ff16062f960",
-			"appSKey": "dc602526fe26750172f999adb9691755",
-			"appKey": "74f3d03eeaa6da60a1b335ad415419b3",
-			"name": "Heating Meter 02",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1375.509,0.455",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6560428,
-				"longitude": 23.5400119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"32": {
-		"id": 32,
-		"info": {
-			"devEUI": "3794aa8e311f94b8",
-			"devAddr": "1c2b2356",
-			"nwkSKey": "082331125f8290024e7c010a377a7feb",
-			"appSKey": "0d989b420ea9213b18c7fa76064cd0cd",
-			"appKey": "fbb5e836d9bb2ee12d029b1c6bed3536",
-			"name": "Heating Meter 03",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1199.751,0.5039",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6560428,
-				"longitude": 23.5412119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"33": {
-		"id": 33,
-		"info": {
-			"devEUI": "f46e087b5acf5f66",
-			"devAddr": "0fad7493",
-			"nwkSKey": "630a8b4ae6988a2659e0f77ad29d9f1c",
-			"appSKey": "c0add5a1f75892cab78577a439d5b308",
-			"appKey": "67a62f3f3d5175a17800200b78a5301e",
-			"name": "Heating Meter 04",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1669.16,0.5333",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6560428,
-				"longitude": 23.5424119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"34": {
-		"id": 34,
-		"info": {
-			"devEUI": "3d57e472814708a1",
-			"devAddr": "26434b28",
-			"nwkSKey": "b69d266e02e1080235ad7c8bb9b9f3a0",
-			"appSKey": "fd41748550aa09f111c52c99e4001977",
-			"appKey": "58c0b8ffd89e0c13634d96587495f657",
-			"name": "Heating Meter 05",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1291.058,0.5744",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6560428,
-				"longitude": 23.5436119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"35": {
-		"id": 35,
-		"info": {
-			"devEUI": "b9a3070379f83285",
-			"devAddr": "d5483a03",
-			"nwkSKey": "299726f0669ae6fb9cea7695a36c83bf",
-			"appSKey": "c07f1ff70b773744f7442cafe825bba4",
-			"appKey": "33ae4f04490369948f0a0c76478d552b",
-			"name": "Heating Meter 06",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1734.888,0.6305",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6575428,
-				"longitude": 23.5388119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"36": {
-		"id": 36,
-		"info": {
-			"devEUI": "8ef27683e0904016",
-			"devAddr": "20e88c9a",
-			"nwkSKey": "df13faf8562a574d8b6ce7b18440eb74",
-			"appSKey": "7d8f73e805c97037efa7be61e388cfb1",
-			"appKey": "a5969be373f24b57dc2a737fe3b8c5f6",
-			"name": "Heating Meter 07",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1598.265,0.5074",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6575428,
-				"longitude": 23.5400119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"37": {
-		"id": 37,
-		"info": {
-			"devEUI": "89ec02be9ddf87a2",
-			"devAddr": "4c387bb6",
-			"nwkSKey": "43679d0caa2245a86ad5adf37c93eeaa",
-			"appSKey": "f855ac1e770d057d8203e110fbec102c",
-			"appKey": "25138938c1d7f0c51e71c8425382bce5",
-			"name": "Heating Meter 08",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1471.403,0.4795",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6575428,
-				"longitude": 23.5412119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"38": {
-		"id": 38,
-		"info": {
-			"devEUI": "e3869d2ba4398667",
-			"devAddr": "bfb8c373",
-			"nwkSKey": "27ce3bbb4db826dfb2bd8d3396f826d1",
-			"appSKey": "08a0f274f4a89cf6e788b5fbf1ad8ea4",
-			"appKey": "ca262d17d93cf19655d4fcd3180d1dfb",
-			"name": "Heating Meter 09",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1353.149,0.5259",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6575428,
-				"longitude": 23.5424119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 5
-				},
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": false,
-						"freqUplink": 869525000,
-						"freqDownlink": 869525000,
-						"minDR": 0,
-						"maxDR": 5
-					},
-					"dataRate": 0
-				}
-			]
-		}
-	},
-	"39": {
-		"id": 39,
-		"info": {
-			"devEUI": "8be8a886c1700c06",
-			"devAddr": "852f6e56",
-			"nwkSKey": "e348a9b46703b072c492707dcf3aeb03",
-			"appSKey": "25b15fab258106e2c72b67fcc19ba3f6",
-			"appKey": "e8b0b896a4ecf4a026e61d5f620fb602",
-			"name": "Heating Meter 10",
-			"status": {
-				"mtype": "UnConfirmedDataUp",
-				"payload": "H,1488.742,0.4932",
-				"active": true,
-				"infoUplink": {
-					"fport": 2,
-					"fcnt": 0
-				},
-				"fcntDown": 0,
-				"base64": false
-			},
-			"configuration": {
-				"region": 1,
-				"sendInterval": 10,
-				"ackTimeout": 2,
-				"range": 10000,
-				"disableFCntDown": false,
-				"supportedOtaa": true,
-				"supportedADR": true,
-				"supportedFragment": false,
-				"supportedClassB": false,
-				"supportedClassC": false,
-				"dataRate": 5,
-				"rx1DROffset": 0,
-				"nbRetransmission": 1
-			},
-			"location": {
-				"latitude": 47.6575428,
-				"longitude": 23.5436119,
-				"altitude": 0
-			},
-			"rxs": [
-				{
-					"delay": 5000,
-					"durationOpen": 3000,
-					"channel": {
-						"active": true,
-						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -2390,7 +2390,7 @@
 			"name": "Electricity Meter 05",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1815.604,230.1,1.918",
+				"payload": "E,1815.436,230.4,1.553",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2415,8 +2415,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6515428,
-				"longitude": 23.5481119,
+				"latitude": 47.6503428,
+				"longitude": 23.5566119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2426,8 +2426,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -2460,7 +2460,7 @@
 			"name": "Cooling Meter 01",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1139.546,0.2794",
+				"payload": "C,1138.576,0.3499",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2485,8 +2485,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6467428,
-				"longitude": 23.5393119,
+				"latitude": 47.6455428,
+				"longitude": 23.5478119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2496,8 +2496,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -2530,7 +2530,7 @@
 			"name": "Cooling Meter 02",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1221.998,0.2691",
+				"payload": "C,1220.871,0.2976",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2555,8 +2555,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6467428,
-				"longitude": 23.5405119,
+				"latitude": 47.6455428,
+				"longitude": 23.5490119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2566,8 +2566,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -2600,7 +2600,7 @@
 			"name": "Cooling Meter 03",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1079.135,0.3369",
+				"payload": "C,1078.046,0.3872",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2625,8 +2625,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6467428,
-				"longitude": 23.5417119,
+				"latitude": 47.6455428,
+				"longitude": 23.5502119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2636,8 +2636,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -2670,7 +2670,7 @@
 			"name": "Cooling Meter 04",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1321.636,0.3451",
+				"payload": "C,1320,0.3939",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2695,8 +2695,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6467428,
-				"longitude": 23.5429119,
+				"latitude": 47.6455428,
+				"longitude": 23.5514119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2706,8 +2706,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -2740,7 +2740,7 @@
 			"name": "Cooling Meter 05",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1139.348,0.2688",
+				"payload": "C,1138.247,0.3101",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2765,8 +2765,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6467428,
-				"longitude": 23.5441119,
+				"latitude": 47.6455428,
+				"longitude": 23.5526119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2776,8 +2776,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -2810,7 +2810,7 @@
 			"name": "Cooling Meter 06",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1441.375,0.2913",
+				"payload": "C,1440.145,0.3364",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2835,8 +2835,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6482428,
-				"longitude": 23.5393119,
+				"latitude": 47.6470428,
+				"longitude": 23.5478119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2846,8 +2846,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -2880,7 +2880,7 @@
 			"name": "Cooling Meter 07",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1053.012,0.2927",
+				"payload": "C,1052.069,0.3365",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2905,8 +2905,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6482428,
-				"longitude": 23.5405119,
+				"latitude": 47.6470428,
+				"longitude": 23.5490119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2916,8 +2916,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -2950,7 +2950,7 @@
 			"name": "Cooling Meter 08",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1037.105,0.269",
+				"payload": "C,1036.259,0.3427",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -2975,8 +2975,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6482428,
-				"longitude": 23.5417119,
+				"latitude": 47.6470428,
+				"longitude": 23.5502119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -2986,8 +2986,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -3020,7 +3020,7 @@
 			"name": "Cooling Meter 09",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1051.438,0.2777",
+				"payload": "C,1050.284,0.3113",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3045,8 +3045,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6482428,
-				"longitude": 23.5429119,
+				"latitude": 47.6470428,
+				"longitude": 23.5514119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3056,8 +3056,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -3090,7 +3090,7 @@
 			"name": "Cooling Meter 10",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "C,1232.599,0.3105",
+				"payload": "C,1231.598,0.396",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3115,8 +3115,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6482428,
-				"longitude": 23.5441119,
+				"latitude": 47.6470428,
+				"longitude": 23.5526119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3126,8 +3126,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -3160,7 +3160,7 @@
 			"name": "Electricity Meter 06",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1821.732,229,2.093",
+				"payload": "E,1822.221,229.7,1.634",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3185,8 +3185,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6530428,
-				"longitude": 23.5433119,
+				"latitude": 47.6518428,
+				"longitude": 23.5518119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3196,8 +3196,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -3230,7 +3230,7 @@
 			"name": "Electricity Meter 07",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1607.971,230.6,2.47",
+				"payload": "E,1608.556,229.7,2.948",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3255,8 +3255,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6530428,
-				"longitude": 23.5445119,
+				"latitude": 47.6518428,
+				"longitude": 23.5530119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3266,8 +3266,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -3300,7 +3300,7 @@
 			"name": "Electricity Meter 08",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1828.699,229.9,1.961",
+				"payload": "E,1829.119,230.5,1.359",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3325,8 +3325,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6530428,
-				"longitude": 23.5457119,
+				"latitude": 47.6518428,
+				"longitude": 23.5542119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3336,8 +3336,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -3370,7 +3370,7 @@
 			"name": "Electricity Meter 09",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1409.302,229.3,2.195",
+				"payload": "E,1409.57,230.2,1.662",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3395,8 +3395,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6530428,
-				"longitude": 23.5469119,
+				"latitude": 47.6518428,
+				"longitude": 23.5554119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3406,8 +3406,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
@@ -3440,7 +3440,7 @@
 			"name": "Electricity Meter 10",
 			"status": {
 				"mtype": "UnConfirmedDataUp",
-				"payload": "E,1671.648,230.8,3.661",
+				"payload": "E,1672.279,230.7,2.099",
 				"active": true,
 				"infoUplink": {
 					"fport": 2,
@@ -3465,8 +3465,8 @@
 				"nbRetransmission": 1
 			},
 			"location": {
-				"latitude": 47.6530428,
-				"longitude": 23.5481119,
+				"latitude": 47.6518428,
+				"longitude": 23.5566119,
 				"altitude": 0
 			},
 			"rxs": [
@@ -3476,8 +3476,8 @@
 					"channel": {
 						"active": true,
 						"enableUplink": true,
-						"freqUplink": 868100000,
-						"freqDownlink": 868100000,
+						"freqUplink": 868300000,
+						"freqDownlink": 868300000,
 						"minDR": 0,
 						"maxDR": 5
 					},
