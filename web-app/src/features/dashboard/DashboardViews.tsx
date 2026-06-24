@@ -1,4 +1,4 @@
-import { useMemo, useState, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from "react";
 import dynamic from "next/dynamic";
 
 import { UTILITY_TYPES, defaultUnitLabelForUtilityType, type UtilityType, utilityTypeLabel } from "@/lib/utility";
@@ -181,19 +181,27 @@ function QuantityWithUnit({
   );
 }
 
-function UtilityChip({ utilityType }: { utilityType: UtilityType }) {
+function localizedUtilityTypeLabel(language: DashboardController["language"], utilityType: UtilityType) {
+  return translateText(language, utilityTypeLabel(utilityType));
+}
+
+function localizedStatusLabel(language: DashboardController["language"], status: DeviceRow["status"]) {
+  return translateText(language, statusLabel(status));
+}
+
+function UtilityChip({ utilityType, language }: { utilityType: UtilityType; language: DashboardController["language"] }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full bg-surface-container-low px-2.5 py-1 text-xs font-semibold">
       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: utilityColor(utilityType) }} />
-      {utilityTypeLabel(utilityType)}
+      {localizedUtilityTypeLabel(language, utilityType)}
     </span>
   );
 }
 
-function StatusChip({ status }: { status: DeviceRow["status"] }) {
+function StatusChip({ status, language }: { status: DeviceRow["status"]; language: DashboardController["language"] }) {
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.08em] ${statusClasses(status)}`}>
-      {statusLabel(status)}
+      {localizedStatusLabel(language, status)}
     </span>
   );
 }
@@ -473,6 +481,15 @@ function rateLabelForUtility(utilityType: UtilityType) {
   return "Usage Rate";
 }
 
+function deviceRateDisplay(row: DeviceRow) {
+  if (row.device.utilityType === "ELECTRICITY") {
+    return `${formatLoadWatts(row.loadWatts)} W`;
+  }
+
+  const rate = row.reading?.rate;
+  return `${formatQuantity(rate)} ${rateUnitForDevice(row.device)}`;
+}
+
 function gaugeMaxForUtility(utilityType: UtilityType) {
   switch (utilityType) {
     case "GAS":
@@ -487,7 +504,7 @@ function gaugeMaxForUtility(utilityType: UtilityType) {
   }
 }
 
-function toBillingChartPoints(rows: DeviceRow[]): BillingChartPoint[] {
+function toBillingChartPoints(rows: DeviceRow[], language: DashboardController["language"]): BillingChartPoint[] {
   const grouped = new Map<UtilityType, BillingChartPoint>();
 
   for (const row of rows) {
@@ -495,7 +512,7 @@ function toBillingChartPoints(rows: DeviceRow[]): BillingChartPoint[] {
       grouped.get(row.device.utilityType) ??
       ({
         utilityType: row.device.utilityType,
-        label: utilityTypeLabel(row.device.utilityType),
+        label: localizedUtilityTypeLabel(language, row.device.utilityType),
         estimatedCost: 0,
         consumption: 0,
         devices: 0,
@@ -545,7 +562,7 @@ export function OverviewView({ controller }: ViewProps) {
     <div className="space-y-6">
       <Panel className="p-4">
         <SectionHeader
-          eyebrow="Home"
+          eyebrow={tr("Home")}
           title={tr("Fleet Overview")}
           subtitle={tr("Operational health, live telemetry, and utility cost distribution.")}
           action={
@@ -557,7 +574,7 @@ export function OverviewView({ controller }: ViewProps) {
                   onClick={() => setHomeMode(option.value)}
                 >
                   <UIIcon name={option.icon} className="text-[15px]" filled={homeMode === option.value} />
-                  {option.label}
+                  {tr(option.label)}
                 </SegmentedButton>
               ))}
             </div>
@@ -570,7 +587,7 @@ export function OverviewView({ controller }: ViewProps) {
       ) : (
         <>
           <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <KpiCard label={tr("Fleet Devices")} value={devices.length} detail={`${activeDeviceCount} active devices`} icon="router" />
+            <KpiCard label={tr("Fleet Devices")} value={devices.length} detail={`${activeDeviceCount} ${tr("active devices")}`} icon="router" />
             <KpiCard
               label={tr("Utility Categories")}
               value={fleetSummary?.totals.utilityCategoryCount ?? 0}
@@ -581,7 +598,7 @@ export function OverviewView({ controller }: ViewProps) {
             <KpiCard
               label={tr("Fleet Cost (30d)")}
               value={formatCurrency(fleetSummary?.totals.monthEstimatedCost)}
-              detail={`Today: ${formatCurrency(fleetSummary?.totals.todayEstimatedCost)}`}
+              detail={`${tr("Today")}: ${formatCurrency(fleetSummary?.totals.todayEstimatedCost)}`}
               icon="payments"
             />
             <KpiCard
@@ -607,7 +624,14 @@ export function OverviewView({ controller }: ViewProps) {
                 eyebrow={tr("Today / Week / 30d")}
               />
               <div className="mt-5">
-                <UtilityConsumptionChart data={utilityChartPoints} />
+                <UtilityConsumptionChart
+                  data={utilityChartPoints}
+                  periodLabels={{
+                    today: tr("Today"),
+                    week: tr("Week"),
+                    month: tr("30d"),
+                  }}
+                />
               </div>
             </Panel>
 
@@ -637,7 +661,7 @@ export function OverviewView({ controller }: ViewProps) {
                       {liveByCategory.map((category) => (
                         <tr key={`live-${category.utilityType}-${category.unitLabel}`} className="border-t border-outline-variant/15">
                           <td className="px-4 py-3">
-                            <UtilityChip utilityType={category.utilityType} />
+                            <UtilityChip utilityType={category.utilityType} language={controller.language} />
                           </td>
                           <td className="px-4 py-3 font-mono text-xs">{category.deviceCount}</td>
                           <td className="px-4 py-3">
@@ -699,7 +723,7 @@ export function OverviewView({ controller }: ViewProps) {
                   <p className="text-sm font-semibold">{point.name}</p>
                   <p className="mt-1 font-mono text-xs text-on-surface-variant">{point.devEui}</p>
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <UtilityChip utilityType={point.utilityType} />
+                    <UtilityChip utilityType={point.utilityType} language={controller.language} />
                     <QuantityWithUnit value={point.value} unit={point.unitLabel} valueClassName="text-lg font-bold" />
                   </div>
                 </button>
@@ -770,7 +794,7 @@ export function DevicesView({ controller }: ViewProps) {
     <div className="space-y-6">
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <KpiCard label={tr("Total Fleet")} value={devices.length} detail="Devices linked to this account" icon="router" />
-        <KpiCard label={tr("Connected")} value={connectedCount} detail="Live telemetry received recently" icon="wifi_tethering" tone="success" />
+        <KpiCard label={tr("Connected")} value={connectedCount} detail={tr("Live telemetry received recently")} icon="wifi_tethering" tone="success" />
         <KpiCard label="Critical Errors" value={errorCount} detail="Devices with stale or failed telemetry" icon="warning" tone={errorCount > 0 ? "warning" : "neutral"} />
       </section>
 
@@ -878,7 +902,7 @@ export function DevicesView({ controller }: ViewProps) {
                 <th className="px-4 py-3">{tr("Tariff")}</th>
                 <th className="px-4 py-3">{tr("Status")}</th>
                 <th className="px-4 py-3">{tr("Last Seen")}</th>
-                <th className="px-4 py-3 text-right">{tr("Load")}</th>
+                <th className="px-4 py-3 text-right">{tr("Rate")}</th>
                 <th className="px-4 py-3 text-right">{tr("Actions")}</th>
               </tr>
             </thead>
@@ -890,16 +914,16 @@ export function DevicesView({ controller }: ViewProps) {
                     <p className="mt-1 font-mono text-xs text-on-surface-variant">{row.device.devEui}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <UtilityChip utilityType={row.device.utilityType} />
+                    <UtilityChip utilityType={row.device.utilityType} language={controller.language} />
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-on-surface-variant">
                     {formatCurrency(row.device.tariffPerUnit)} / {row.device.unitLabel}
                   </td>
                   <td className="px-4 py-3">
-                    <StatusChip status={row.status} />
+                    <StatusChip status={row.status} language={controller.language} />
                   </td>
                   <td className="px-4 py-3 text-on-surface-variant">{row.lastSeen}</td>
-                  <td className="px-4 py-3 text-right font-mono">{formatLoadWatts(row.loadWatts)} W</td>
+                  <td className="px-4 py-3 text-right font-mono">{deviceRateDisplay(row)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex items-center gap-2">
                       <button
@@ -936,15 +960,15 @@ export function DevicesView({ controller }: ViewProps) {
                   <p className="font-semibold">{row.device.name}</p>
                   <p className="mt-1 font-mono text-xs text-on-surface-variant">{row.device.devEui}</p>
                 </div>
-                <StatusChip status={row.status} />
+                <StatusChip status={row.status} language={controller.language} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <UtilityChip utilityType={row.device.utilityType} />
+                <UtilityChip utilityType={row.device.utilityType} language={controller.language} />
                 <span className="rounded-full bg-surface-container px-2.5 py-1 font-mono text-xs text-on-surface-variant">
                   {formatCurrency(row.device.tariffPerUnit)} / {row.device.unitLabel}
                 </span>
                 <span className="rounded-full bg-surface-container px-2.5 py-1 font-mono text-xs text-on-surface-variant">
-                  {formatLoadWatts(row.loadWatts)} W
+                  {deviceRateDisplay(row)}
                 </span>
               </div>
               <div className="mt-4 flex items-center gap-2">
@@ -986,7 +1010,8 @@ export function DevicesView({ controller }: ViewProps) {
 
       {showCreateDevice ? (
         <DeviceFormModal
-          title="Register New Device"
+          title={tr("Register New Device")}
+          language={controller.language}
           mode="create"
           form={createForm}
           error={createError}
@@ -999,7 +1024,8 @@ export function DevicesView({ controller }: ViewProps) {
 
       {editingDevEui ? (
         <DeviceFormModal
-          title="Edit Device"
+          title={tr("Edit Device")}
+          language={controller.language}
           mode="edit"
           form={editForm}
           devEui={editingDevEui}
@@ -1016,6 +1042,7 @@ export function DevicesView({ controller }: ViewProps) {
 
 function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormState>({
   title,
+  language,
   mode,
   form,
   devEui,
@@ -1026,6 +1053,7 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
   setForm,
 }: {
   title: string;
+  language: DashboardController["language"];
   mode: "create" | "edit";
   form: TForm;
   devEui?: string;
@@ -1035,6 +1063,7 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
   onClose: () => void;
   setForm: Dispatch<SetStateAction<TForm>>;
 }) {
+  const tr = (phrase: string) => translateText(language, phrase);
   const setField = <K extends keyof TForm>(key: K, value: TForm[K]) => {
     setForm((previous) => ({
       ...previous,
@@ -1055,7 +1084,7 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-on-surface-variant">{mode === "create" ? "New meter" : devEui}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-on-surface-variant">{mode === "create" ? tr("New meter") : devEui}</p>
             <h3 id={`${mode}-device-dialog-title`} className="mt-1 text-2xl font-bold">{title}</h3>
           </div>
           <button
@@ -1064,7 +1093,7 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
             onClick={onClose}
             disabled={submitting}
           >
-            Close
+            {tr("Close")}
           </button>
         </div>
 
@@ -1083,7 +1112,7 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
           ) : null}
 
           <label className="block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Device Name</span>
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{tr("Device Name")}</span>
             <input
               className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
               placeholder="Main Chiller Plant"
@@ -1094,7 +1123,7 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Utility Type</span>
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{tr("Utility Type")}</span>
             <select
               className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
               value={form.utilityType}
@@ -1114,7 +1143,7 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
             >
               {UTILITY_TYPES.map((utilityType) => (
                 <option key={`${mode}-utility-${utilityType}`} value={utilityType}>
-                  {utilityTypeLabel(utilityType)}
+                  {localizedUtilityTypeLabel(language, utilityType)}
                 </option>
               ))}
             </select>
@@ -1221,7 +1250,27 @@ function HomeMapPanel({ controller }: ViewProps) {
   const [utilityFilter, setUtilityFilter] = useState<MapUtilityFilter>("all");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
   const [mapSearchQuery, setMapSearchQuery] = useState("");
+  const [mapSearchOpen, setMapSearchOpen] = useState(false);
+  const mapSearchRef = useRef<HTMLDivElement | null>(null);
   const tr = (phrase: string) => translateText(controller.language, phrase);
+
+  useEffect(() => {
+    if (!mapSearchOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && mapSearchRef.current?.contains(target)) {
+        return;
+      }
+
+      setMapSearchOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [mapSearchOpen]);
 
   const mapRows = useMemo(
     () => {
@@ -1303,9 +1352,9 @@ function HomeMapPanel({ controller }: ViewProps) {
       </Panel>
 
       <aside className="flex min-h-[540px] flex-col rounded-lg bg-surface-container-high p-4 xl:h-[clamp(588px,calc(100vh-242px),838px)]">
-        <SectionHeader title={tr("Map Selection")} subtitle={`${mapDevices.length} mapped device(s)`} eyebrow={tr("Location")} />
+        <SectionHeader title={tr("Map Selection")} subtitle={`${mapDevices.length} ${tr("mapped device(s)")}`} />
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.5rem] gap-3">
           <label className="block">
             <span className="mb-1.5 block text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-on-surface-variant">
               {tr("Utility")}
@@ -1318,7 +1367,7 @@ function HomeMapPanel({ controller }: ViewProps) {
               <option value="all">{tr("All")}</option>
               {UTILITY_TYPES.map((utilityType) => (
                 <option key={`map-utility-option-${utilityType}`} value={utilityType}>
-                  {utilityTypeLabel(utilityType)}
+                  {localizedUtilityTypeLabel(controller.language, utilityType)}
                 </option>
               ))}
             </select>
@@ -1340,29 +1389,67 @@ function HomeMapPanel({ controller }: ViewProps) {
               ))}
             </select>
           </label>
+
+          <div ref={mapSearchRef} className="contents">
+            <div className="block">
+              <span className="mb-1.5 block select-none text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-transparent">
+                Search
+              </span>
+              <button
+                type="button"
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border border-outline-variant/25 transition ${
+                  mapSearchQuery.trim().length > 0
+                    ? "bg-primary text-[#1a1766]"
+                    : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest hover:text-primary"
+                }`}
+                aria-label={tr("Search map devices")}
+                title={tr("Search map devices")}
+                onClick={() => setMapSearchOpen((isOpen) => !isOpen)}
+              >
+                <UIIcon name="search" className="text-[15px]" />
+              </button>
+            </div>
+
+            {mapSearchOpen ? (
+              <div className="relative col-span-3">
+                <UIIcon
+                  name="search"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant"
+                />
+                <input
+                  autoFocus
+                  className="min-h-10 w-full rounded-lg border border-primary bg-surface-container-low py-2 pl-9 pr-3 text-sm outline-none transition placeholder:text-on-surface-variant"
+                  placeholder={tr("Search map devices")}
+                  value={mapSearchQuery}
+                  onChange={(event) => setMapSearchQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      setMapSearchOpen(false);
+                      event.currentTarget.blur();
+                    }
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        <div className="mt-3 flex gap-2">
-          <input
-            className="min-h-10 min-w-0 flex-1 rounded-lg border border-outline-variant/25 bg-surface-container-low px-3 text-sm outline-none transition placeholder:text-on-surface-variant focus:border-primary"
-            placeholder={tr("Search map devices")}
-            value={mapSearchQuery}
-            onChange={(event) => setMapSearchQuery(event.target.value)}
-          />
-          {filtersAreActive ? (
+        {filtersAreActive ? (
+          <div className="mt-3 flex justify-end">
             <button
               type="button"
-              className="rounded-lg bg-surface-container-highest px-3 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
+              className="rounded-lg bg-surface-container-highest px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-[#1a1766]"
               onClick={() => {
                 setUtilityFilter("all");
                 setStatusFilter("all");
                 setMapSearchQuery("");
+                setMapSearchOpen(false);
               }}
             >
               {tr("Reset")}
             </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
         {selectedMappedDevice ? (
           <article className="mt-4 rounded-lg bg-surface-container-low p-3">
@@ -1371,7 +1458,7 @@ function HomeMapPanel({ controller }: ViewProps) {
                 <p className="truncate text-sm font-semibold">{selectedMappedDevice.name}</p>
                 <p className="mt-1 truncate font-mono text-[0.6875rem] text-on-surface-variant">{selectedMappedDevice.devEui}</p>
               </div>
-              <UtilityChip utilityType={selectedMappedDevice.utilityType} />
+              <UtilityChip utilityType={selectedMappedDevice.utilityType} language={controller.language} />
             </div>
             <div className="mt-3 flex items-center justify-between gap-3">
               <p className="font-mono text-xs text-on-surface-variant">
@@ -1393,7 +1480,7 @@ function HomeMapPanel({ controller }: ViewProps) {
           {groupedByUtility.map((group) => (
             <div key={`map-group-${group.utilityType}`}>
               <p className="sticky top-0 z-10 mb-2 rounded bg-surface-container-high py-1 text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
-                {utilityTypeLabel(group.utilityType)} ({group.rows.length})
+                {localizedUtilityTypeLabel(controller.language, group.utilityType)} ({group.rows.length})
               </p>
               <div className="space-y-2">
                 {group.rows.map((row) => {
@@ -1411,7 +1498,7 @@ function HomeMapPanel({ controller }: ViewProps) {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p className="truncate text-sm font-semibold">{row.device.name}</p>
-                        <StatusChip status={row.status} />
+                        <StatusChip status={row.status} language={controller.language} />
                       </div>
                       <p className={`mt-1 font-mono text-xs ${isSelected ? "text-[#1a1766]/80" : "text-on-surface-variant"}`}>
                         {row.device.latitude?.toFixed(4)}, {row.device.longitude?.toFixed(4)}
@@ -1472,7 +1559,7 @@ export function MeterView({ controller }: ViewProps) {
           <SectionHeader
             eyebrow={`Device | ${selectedDevice.devEui}`}
             title={selectedDevice.name}
-            subtitle={`${utilityTypeLabel(selectedDevice.utilityType)} | ${formatCurrency(selectedDevice.tariffPerUnit)} / ${selectedDevice.unitLabel}`}
+            subtitle={`${localizedUtilityTypeLabel(controller.language, selectedDevice.utilityType)} | ${formatCurrency(selectedDevice.tariffPerUnit)} / ${selectedDevice.unitLabel}`}
           />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <select
@@ -1486,7 +1573,7 @@ export function MeterView({ controller }: ViewProps) {
                 </option>
               ))}
             </select>
-            <StatusChip status={selectedDeviceRow?.status ?? "heartbeat"} />
+            <StatusChip status={selectedDeviceRow?.status ?? "heartbeat"} language={controller.language} />
           </div>
         </div>
       </Panel>
@@ -1532,7 +1619,7 @@ export function MeterView({ controller }: ViewProps) {
               ) : (
                 <>
                   <ReadingTile label={tr(rateLabelForUtility(selectedDevice.utilityType))} value={formatQuantity(currentRate)} unit={liveMetricUnit} />
-                  <ReadingTile label={tr("Last Seen")} value={formatRelativeTime(selectedLatest?.timestamp)} unit="" />
+                  <ReadingTile label={tr("Last Seen")} value={formatRelativeTime(selectedLatest?.timestamp, controller.language)} unit="" />
                 </>
               )}
             </div>
@@ -1547,7 +1634,9 @@ export function MeterView({ controller }: ViewProps) {
                 {tr("Stream Health")}
               </p>
               <p className="mt-3 text-lg font-semibold text-tertiary">{streamStatus === "open" ? tr("Excellent") : streamStatus}</p>
-              <p className="mt-1 text-sm text-on-surface-variant">Heartbeat: {lastHeartbeatAt ? formatRelativeTime(lastHeartbeatAt) : "--"}</p>
+              <p className="mt-1 text-sm text-on-surface-variant">
+                {tr("Heartbeat")}: {lastHeartbeatAt ? formatRelativeTime(lastHeartbeatAt, controller.language) : "--"}
+              </p>
             </Panel>
 
             <Panel className="md:col-span-2">
@@ -1569,41 +1658,41 @@ export function MeterView({ controller }: ViewProps) {
               <MeterAreaChart data={meterSeries} unitLabel={`${selectedDevice.unitLabel}/day`} />
             </div>
           </Panel>
-
-          <Panel>
-            <SectionHeader
-              title={tr("ARIMA Forecast")}
-              subtitle={tr("Observed interval consumption against the predicted short-term consumption.")}
-              eyebrow={tr("Last 72 hours / next 24 hours")}
-            />
-
-            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
-              <ForecastTile label={tr("Horizon")} value={`${selectedForecast?.query.horizonHours ?? 24}h`} />
-              <ForecastTile label={tr("Step")} value={`${selectedForecast?.query.stepHours ?? 3}h`} />
-              <ForecastTile label={tr("ARIMA Order")} value={arimaOrder} />
-              <ForecastTile
-                label={tr("Projected Cost")}
-                value={formatCurrency(selectedForecast?.estimate.estimatedCost)}
-                detail={
-                  <QuantityWithUnit
-                    value={selectedForecast?.estimate.forecastedDeltaUnits}
-                    unit={selectedDevice.unitLabel}
-                  />
-                }
-              />
-            </div>
-
-            {forecastMessage ? (
-              <p className="mt-4 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-                {forecastMessage}
-              </p>
-            ) : null}
-
-            <div className="mt-5 rounded-lg bg-surface-container-low p-3">
-              <ForecastComparisonChart data={forecastSeries} unitLabel={`${selectedDevice.unitLabel}/3h`} />
-            </div>
-          </Panel>
         </div>
+
+        <Panel className="xl:col-span-12">
+          <SectionHeader
+            title={tr("ARIMA Forecast")}
+            subtitle={tr("Observed interval consumption against the predicted short-term consumption.")}
+            eyebrow={tr("Last 72 hours / next 24 hours")}
+          />
+
+          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
+            <ForecastTile label={tr("Horizon")} value={`${selectedForecast?.query.horizonHours ?? 24}h`} />
+            <ForecastTile label={tr("Step")} value={`${selectedForecast?.query.stepHours ?? 3}h`} />
+            <ForecastTile label={tr("ARIMA Order")} value={arimaOrder} />
+            <ForecastTile
+              label={tr("Projected Cost")}
+              value={formatCurrency(selectedForecast?.estimate.estimatedCost)}
+              detail={
+                <QuantityWithUnit
+                  value={selectedForecast?.estimate.forecastedDeltaUnits}
+                  unit={selectedDevice.unitLabel}
+                />
+              }
+            />
+          </div>
+
+          {forecastMessage ? (
+            <p className="mt-4 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
+              {forecastMessage}
+            </p>
+          ) : null}
+
+          <div className="mt-5 rounded-lg bg-surface-container-low p-3">
+            <ForecastComparisonChart data={forecastSeries} unitLabel={`${selectedDevice.unitLabel}/3h`} />
+          </div>
+        </Panel>
       </section>
     </div>
   );
@@ -1666,7 +1755,7 @@ function CostTile({
 export function BillingView({ controller }: ViewProps) {
   const { fleetSummary, selectedDataLoading, deviceRows } = controller;
   const tr = (phrase: string) => translateText(controller.language, phrase);
-  const billingChartPoints = useMemo(() => toBillingChartPoints(deviceRows), [deviceRows]);
+  const billingChartPoints = useMemo(() => toBillingChartPoints(deviceRows, controller.language), [controller.language, deviceRows]);
   const topCostRows = useMemo(() => toDeviceCostRanking(deviceRows), [deviceRows]);
   const [billingPage, setBillingPage] = useState(1);
   const billingTotalPages = getTotalPages(deviceRows.length, BILLING_PAGE_SIZE);
@@ -1694,7 +1783,7 @@ export function BillingView({ controller }: ViewProps) {
         <KpiCard
           label={tr("This Month")}
           value={formatCurrency(fleetSummary?.totals.monthEstimatedCost)}
-          detail={`${fleetSummary?.totals.activeDeviceCount ?? 0} active devices`}
+          detail={`${fleetSummary?.totals.activeDeviceCount ?? 0} ${tr("active devices")}`}
           icon="attach_money"
         />
       </section>
@@ -1720,7 +1809,7 @@ export function BillingView({ controller }: ViewProps) {
                       {index + 1}. {row.device.name}
                     </p>
                     <div className="mt-2">
-                      <UtilityChip utilityType={row.device.utilityType} />
+                      <UtilityChip utilityType={row.device.utilityType} language={controller.language} />
                     </div>
                   </div>
                   <p className="font-mono text-sm font-bold">{formatCurrency(row.estimatedCost)}</p>
@@ -1760,7 +1849,7 @@ export function BillingView({ controller }: ViewProps) {
                     <tr key={`billing-${row.device.id}`} className="border-t border-outline-variant/15 text-sm hover:bg-surface-container-low">
                       <td className="px-4 py-3 font-semibold">{row.device.name}</td>
                       <td className="px-4 py-3">
-                        <UtilityChip utilityType={row.device.utilityType} />
+                        <UtilityChip utilityType={row.device.utilityType} language={controller.language} />
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-on-surface-variant">
                         {formatCurrency(row.device.tariffPerUnit)} / {row.device.unitLabel}
@@ -1770,7 +1859,7 @@ export function BillingView({ controller }: ViewProps) {
                       </td>
                       <td className="px-4 py-3 font-mono">{formatCurrency(cumulativeCost)}</td>
                       <td className="px-4 py-3">
-                        <StatusChip status={row.status} />
+                        <StatusChip status={row.status} language={controller.language} />
                       </td>
                     </tr>
                   );
@@ -1789,10 +1878,10 @@ export function BillingView({ controller }: ViewProps) {
                     <div>
                       <p className="font-semibold">{row.device.name}</p>
                       <div className="mt-2">
-                        <UtilityChip utilityType={row.device.utilityType} />
+                        <UtilityChip utilityType={row.device.utilityType} language={controller.language} />
                       </div>
                     </div>
-                    <StatusChip status={row.status} />
+                    <StatusChip status={row.status} language={controller.language} />
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div>

@@ -6,6 +6,7 @@ import type {
   PublicDevice,
   PublicUser,
 } from "./types";
+import type { DashboardLanguage } from "./i18n";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -101,34 +102,51 @@ export function formatLoadWatts(value: number | null | undefined) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
 
-export function formatRelativeTime(timestamp: string | null | undefined) {
+export function formatRelativeTime(timestamp: string | null | undefined, language: DashboardLanguage = "en") {
+  const relativeText =
+    language === "ro"
+      ? {
+          noReading: "Fara citire",
+          justNow: "Acum",
+          minAgo: "min in urma",
+          hourAgo: "h in urma",
+          dayAgo: "z in urma",
+        }
+      : {
+          noReading: "No reading",
+          justNow: "Just now",
+          minAgo: "min ago",
+          hourAgo: "h ago",
+          dayAgo: "d ago",
+        };
+
   if (!timestamp) {
-    return "No reading";
+    return relativeText.noReading;
   }
 
   const parsed = Date.parse(timestamp);
   if (Number.isNaN(parsed)) {
-    return "No reading";
+    return relativeText.noReading;
   }
 
   const diffMs = Date.now() - parsed;
   const minutes = Math.max(0, Math.floor(diffMs / 60000));
 
   if (minutes < 1) {
-    return "Just now";
+    return relativeText.justNow;
   }
 
   if (minutes < 60) {
-    return `${minutes} min ago`;
+    return `${minutes} ${relativeText.minAgo}`;
   }
 
   const hours = Math.floor(minutes / 60);
   if (hours < 24) {
-    return `${hours}h ago`;
+    return `${hours}${relativeText.hourAgo}`;
   }
 
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return `${days}${relativeText.dayAgo}`;
 }
 
 export function resolveDeviceStatus(

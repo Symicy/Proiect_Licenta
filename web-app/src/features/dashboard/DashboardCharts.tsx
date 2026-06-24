@@ -99,7 +99,15 @@ function EmptyChart({ label }: { label: string }) {
   );
 }
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name?: string; value?: number; color?: string }>; label?: string }) {
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: number; color?: string; payload?: { unitLabel?: string } }>;
+  label?: string;
+}) {
   if (!active || !payload?.length) {
     return null;
   }
@@ -112,7 +120,10 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
           <p key={`${item.name}-${item.value}`} className="flex items-center gap-2 text-on-surface-variant">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color ?? "#c0c1ff" }} />
             <span>{item.name}: </span>
-            <span className="font-mono text-on-surface">{formatQuantity(item.value)}</span>
+            <span className="font-mono text-on-surface">
+              {formatQuantity(item.value)}
+              {item.payload?.unitLabel ? ` ${item.payload.unitLabel}` : ""}
+            </span>
           </p>
         ))}
       </div>
@@ -174,7 +185,13 @@ export function FleetCostDonut({ data }: { data: UtilityChartPoint[] }) {
   );
 }
 
-export function UtilityConsumptionChart({ data }: { data: UtilityChartPoint[] }) {
+export function UtilityConsumptionChart({
+  data,
+  periodLabels = { today: "Today", week: "Week", month: "30d" },
+}: {
+  data: UtilityChartPoint[];
+  periodLabels?: { today: string; week: string; month: string };
+}) {
   if (data.length === 0) {
     return <EmptyChart label="No utility consumption data available yet." />;
   }
@@ -193,9 +210,9 @@ export function UtilityConsumptionChart({ data }: { data: UtilityChartPoint[] })
           <YAxis tick={{ fill: AXIS_COLOR, fontSize: 12 }} tickLine={false} axisLine={false} />
           <Tooltip content={<ChartTooltip />} />
           <Legend wrapperStyle={{ color: AXIS_COLOR, fontSize: 12 }} />
-          <Bar dataKey="today" name="Today" fill="#4ade80" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="week" name="Week" fill="#38bdf8" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="month" name="30d" fill="#c0c1ff" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="today" name={periodLabels.today} fill="#4ade80" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="week" name={periodLabels.week} fill="#38bdf8" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="month" name={periodLabels.month} fill="#c0c1ff" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

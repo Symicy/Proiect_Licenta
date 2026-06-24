@@ -526,11 +526,11 @@ export function useDashboardController(initialView: ViewKey = "overview") {
         latestConsumption,
         loadWatts,
         status,
-        lastSeen: formatRelativeTime(reading?.timestamp),
+        lastSeen: formatRelativeTime(reading?.timestamp, language),
         liveCost: streamPayload?.estimatedCostAtReading ?? null,
       };
     });
-  }, [devices, latestByDevice, selectedDevEui, selectedLatest, streamStatus]);
+  }, [devices, language, latestByDevice, selectedDevEui, selectedLatest, streamStatus]);
 
   const filteredDeviceRows = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
