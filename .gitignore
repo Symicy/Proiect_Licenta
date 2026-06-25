@@ -1,5 +1,7 @@
 # Playwright CLI artifacts
 /.playwright-cli/
+/.agents
+/.codex
 /output/playwright/
 
 # Python virtual environments
