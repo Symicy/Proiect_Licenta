@@ -104,7 +104,9 @@ describe("device validation", () => {
 
   it("requires at least one field for device updates", () => {
     expect(() => updateDeviceSchema.parse({})).toThrow();
-    expect(updateDeviceSchema.parse({ name: "Updated Meter" }).name).toBe("Updated Meter");
+    expect(updateDeviceSchema.parse({ tariffPerUnit: "0.31" }).tariffPerUnit).toBe(0.31);
+    expect(updateDeviceSchema.parse({ isActive: false }).isActive).toBe(false);
+    expect(() => updateDeviceSchema.parse({ name: "Updated Meter" })).toThrow();
   });
 });
 

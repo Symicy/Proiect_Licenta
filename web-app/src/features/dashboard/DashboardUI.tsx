@@ -422,7 +422,6 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
     logoutSubmitting,
     logoutError,
     selectedDevEui,
-    setShowCreateDevice,
     setActiveViewWithRoute,
     loadDevices,
     loadFleetSummary,
@@ -443,7 +442,6 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
       <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col overflow-y-auto bg-surface px-5 py-8 lg:flex">
         <div>
           <p className="brand-gradient-text text-3xl font-black tracking-tight">WattWise</p>
-          <p className="mt-2 text-xs uppercase tracking-[0.15em] text-on-surface-variant">{text.premiumTier}</p>
           <div className="mt-5">
             <LanguageSwitch language={language} onChange={setLanguage} />
           </div>
@@ -479,18 +477,6 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
         </nav>
 
         <div className="space-y-4">
-          <button
-            type="button"
-            className="primary-gradient-bg inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90"
-            onClick={() => {
-              setShowCreateDevice(true);
-              setActiveViewWithRoute("devices");
-            }}
-          >
-            <UIIcon name="add" className="text-[18px]" />
-            {text.addDevice}
-          </button>
-
           <div className="rounded-xl bg-surface-container-low p-4">
             <div className="flex items-center gap-2">
               <UIIcon name="account_circle" className="text-on-surface text-[20px]" />
@@ -528,9 +514,9 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
               <h1 className="mt-1 text-3xl font-bold tracking-tight">{text.nav[activeView].label}</h1>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid w-full grid-cols-3 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:justify-end">
               <div
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] ${
+                className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] sm:px-4 ${
                   streamStatus === "open"
                     ? "bg-tertiary/10 text-tertiary"
                     : streamStatus === "error"
@@ -539,12 +525,13 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
                 }`}
               >
                 <UIIcon name="wifi_tethering" className="text-[15px]" />
-                {text.stream}: {streamStatus}
+                <span>{text.stream}: </span>
+                {streamStatus}
               </div>
 
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-full bg-surface-container-high px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-surface-container-highest"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-surface-container-high px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-primary transition hover:bg-surface-container-highest sm:px-4"
                 onClick={() => {
                   void loadDevices();
                   void loadFleetSummary();
@@ -554,48 +541,21 @@ export function DashboardShell({ controller, children }: DashboardShellProps) {
                 }}
               >
                 <UIIcon name="refresh" className="text-[15px]" />
-                {text.refresh}
+                <span>{text.refresh}</span>
               </button>
 
-              <details className="group relative">
-                <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full bg-surface-container-high px-2 py-1.5 pr-3 text-xs font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container-highest [&::-webkit-details-marker]:hidden">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-black text-[#1a1766]">
-                    {user.firstName.charAt(0)}
-                    {user.lastName.charAt(0)}
-                  </span>
-                  <span className="hidden max-w-32 truncate sm:inline">{accountLabel}</span>
-                </summary>
-
-                <div className="absolute right-0 mt-2 w-72 rounded-lg border border-outline-variant/20 bg-surface-container-high p-4 shadow-2xl">
-                  <div className="flex items-start gap-3">
-                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-sm font-black text-primary">
-                      {user.firstName.charAt(0)}
-                      {user.lastName.charAt(0)}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">
-                        {user.firstName} {user.lastName}
-                      </p>
-                      <p className="mt-1 truncate text-xs text-on-surface-variant">{user.email}</p>
-                      <p className="mt-2 text-xs uppercase tracking-[0.08em] text-on-surface-variant">
-                        {accountLabel}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-surface-container-highest px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
-                    onClick={() => {
-                      void handleLogout();
-                    }}
-                    disabled={logoutSubmitting}
-                  >
-                    <UIIcon name="logout" className="text-[15px]" />
-                    {logoutSubmitting ? text.signingOut : text.logout}
-                  </button>
-                </div>
-              </details>
+              <button
+                type="button"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-surface-container-high px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-on-surface transition hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-60 lg:hidden"
+                onClick={() => {
+                  void handleLogout();
+                }}
+                disabled={logoutSubmitting}
+                aria-label={text.logout}
+              >
+                <UIIcon name="logout" className="text-[15px]" />
+                <span>{logoutSubmitting ? text.signingOut : text.logout}</span>
+              </button>
             </div>
           </div>
 

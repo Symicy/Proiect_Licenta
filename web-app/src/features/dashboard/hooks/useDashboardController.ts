@@ -1072,35 +1072,13 @@ export function useDashboardController(initialView: ViewKey = "overview") {
     setEditError(null);
 
     try {
-      const latitude = parseCoordinateInput(editForm.latitude);
-      const longitude = parseCoordinateInput(editForm.longitude);
-      const unitLabel = parseUnitLabelInput(editForm.unitLabel);
       const updatePayload: {
-        name: string;
-        utilityType: UtilityType;
         tariffPerUnit: number;
-        unitLabel?: string;
         isActive: boolean;
-        latitude?: number;
-        longitude?: number;
       } = {
-        name: editForm.name,
-        utilityType: editForm.utilityType,
         tariffPerUnit: Number(editForm.tariffPerUnit),
         isActive: editForm.isActive,
       };
-
-      if (unitLabel) {
-        updatePayload.unitLabel = unitLabel;
-      }
-
-      if (latitude !== null) {
-        updatePayload.latitude = latitude;
-      }
-
-      if (longitude !== null) {
-        updatePayload.longitude = longitude;
-      }
 
       const payload = await apiRequest<{ device: PublicDevice }>(`/api/devices/${editingDevEui}`, {
         method: "PATCH",

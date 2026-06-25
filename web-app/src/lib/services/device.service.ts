@@ -35,13 +35,8 @@ export type CreateDeviceForUserInput = {
 };
 
 export type UpdateDeviceForUserInput = {
-  name?: string;
-  utilityType?: UtilityType;
   tariffPerUnit?: number;
-  unitLabel?: string;
   isActive?: boolean;
-  latitude?: number | null;
-  longitude?: number | null;
 };
 
 type DeviceOwnerResolution =
@@ -318,24 +313,11 @@ export async function updateDeviceForUserByDevEui(
     return { status: "forbidden" };
   }
 
-  const nextUtilityType = input.utilityType ?? ownership.device.utilityType;
-  const nextUnitLabel =
-    input.unitLabel !== undefined
-      ? resolveUnitLabel(input.unitLabel, nextUtilityType)
-      : input.utilityType !== undefined
-        ? defaultUnitLabelForUtilityType(nextUtilityType)
-        : undefined;
-
   const updatedDevice = await prisma.device.update({
     where: { devEui: ownership.device.devEui },
     data: {
-      name: input.name?.trim(),
-      utilityType: input.utilityType,
       tariffPerUnit: input.tariffPerUnit,
-      unitLabel: nextUnitLabel,
       isActive: input.isActive,
-      latitude: input.latitude,
-      longitude: input.longitude,
     },
   });
 

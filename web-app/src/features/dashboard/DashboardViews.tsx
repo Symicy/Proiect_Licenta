@@ -816,20 +816,12 @@ export function DevicesView({ controller }: ViewProps) {
                 {tr("Claim")}
               </button>
             ) : null}
-            <button
-              type="button"
-              className="primary-gradient-bg inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90"
-              onClick={() => setShowCreateDevice(true)}
-            >
-              <UIIcon name="add" className="text-[14px]" />
-              {tr("Add Device")}
-            </button>
           </div>
         </div>
 
         {shouldShowClaim ? (
           <form className="mt-5 rounded-lg bg-surface-container-low p-4" onSubmit={handleClaimDevices}>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
               <label className="block flex-1">
                 <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{claimLabel}</span>
                 <input
@@ -847,7 +839,7 @@ export function DevicesView({ controller }: ViewProps) {
               </label>
               <button
                 type="submit"
-                className="primary-gradient-bg inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="primary-gradient-bg inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-[#1a1766] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 xl:mt-6"
                 disabled={claimSubmitting}
               >
                 <UIIcon name="add_box" className="text-[16px]" />
@@ -1112,43 +1104,57 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
             </label>
           ) : null}
 
-          <label className="block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{tr("Device Name")}</span>
-            <input
-              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-              placeholder="Main Chiller Plant"
-              value={form.name}
-              onChange={(event) => setField("name", event.target.value as TForm["name"])}
-              required
-            />
-          </label>
+          {mode === "edit" ? (
+            <>
+              <ReadonlyDeviceField label={tr("Device Name")} value={form.name} />
+              <ReadonlyDeviceField label={tr("Utility Type")} value={localizedUtilityTypeLabel(language, form.utilityType)} />
+              <ReadonlyDeviceField label="Unit Label" value={form.unitLabel} />
+              <ReadonlyDeviceField
+                label="Coordinates"
+                value={form.latitude && form.longitude ? `${form.latitude}, ${form.longitude}` : "--"}
+              />
+            </>
+          ) : (
+            <>
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{tr("Device Name")}</span>
+                <input
+                  className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  placeholder="Main Chiller Plant"
+                  value={form.name}
+                  onChange={(event) => setField("name", event.target.value as TForm["name"])}
+                  required
+                />
+              </label>
 
-          <label className="block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{tr("Utility Type")}</span>
-            <select
-              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-              value={form.utilityType}
-              onChange={(event) =>
-                setForm((previous) => {
-                  const nextUtilityType = event.target.value as typeof previous.utilityType;
-                  const previousDefaultUnit = defaultUnitLabelForUtilityType(previous.utilityType);
-                  const nextDefaultUnit = defaultUnitLabelForUtilityType(nextUtilityType);
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{tr("Utility Type")}</span>
+                <select
+                  className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  value={form.utilityType}
+                  onChange={(event) =>
+                    setForm((previous) => {
+                      const nextUtilityType = event.target.value as typeof previous.utilityType;
+                      const previousDefaultUnit = defaultUnitLabelForUtilityType(previous.utilityType);
+                      const nextDefaultUnit = defaultUnitLabelForUtilityType(nextUtilityType);
 
-                  return {
-                    ...previous,
-                    utilityType: nextUtilityType,
-                    unitLabel: previous.unitLabel === previousDefaultUnit ? nextDefaultUnit : previous.unitLabel,
-                  };
-                })
-              }
-            >
-              {UTILITY_TYPES.map((utilityType) => (
-                <option key={`${mode}-utility-${utilityType}`} value={utilityType}>
-                  {localizedUtilityTypeLabel(language, utilityType)}
-                </option>
-              ))}
-            </select>
-          </label>
+                      return {
+                        ...previous,
+                        utilityType: nextUtilityType,
+                        unitLabel: previous.unitLabel === previousDefaultUnit ? nextDefaultUnit : previous.unitLabel,
+                      };
+                    })
+                  }
+                >
+                  {UTILITY_TYPES.map((utilityType) => (
+                    <option key={`${mode}-utility-${utilityType}`} value={utilityType}>
+                      {localizedUtilityTypeLabel(language, utilityType)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
 
           <label className="block">
             <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">
@@ -1165,43 +1171,47 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
             />
           </label>
 
-          <label className="block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Unit Label</span>
-            <input
-              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-              value={form.unitLabel}
-              onChange={(event) => setField("unitLabel", event.target.value as TForm["unitLabel"])}
-              required
-            />
-          </label>
+          {mode === "create" ? (
+            <>
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Unit Label</span>
+                <input
+                  className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  value={form.unitLabel}
+                  onChange={(event) => setField("unitLabel", event.target.value as TForm["unitLabel"])}
+                  required
+                />
+              </label>
 
-          <label className="block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Latitude</span>
-            <input
-              type="number"
-              min="-90"
-              max="90"
-              step="any"
-              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-              placeholder="44.4268"
-              value={form.latitude}
-              onChange={(event) => setField("latitude", event.target.value as TForm["latitude"])}
-            />
-          </label>
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Latitude</span>
+                <input
+                  type="number"
+                  min="-90"
+                  max="90"
+                  step="any"
+                  className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  placeholder="44.4268"
+                  value={form.latitude}
+                  onChange={(event) => setField("latitude", event.target.value as TForm["latitude"])}
+                />
+              </label>
 
-          <label className="block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Longitude</span>
-            <input
-              type="number"
-              min="-180"
-              max="180"
-              step="any"
-              className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
-              placeholder="26.1025"
-              value={form.longitude}
-              onChange={(event) => setField("longitude", event.target.value as TForm["longitude"])}
-            />
-          </label>
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">Longitude</span>
+                <input
+                  type="number"
+                  min="-180"
+                  max="180"
+                  step="any"
+                  className="w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  placeholder="26.1025"
+                  value={form.longitude}
+                  onChange={(event) => setField("longitude", event.target.value as TForm["longitude"])}
+                />
+              </label>
+            </>
+          ) : null}
 
           <label className="flex items-center gap-2 rounded-lg bg-surface-container-low px-4 py-3 text-sm">
             <input
@@ -1234,6 +1244,15 @@ function DeviceFormModal<TForm extends CreateDeviceFormState | UpdateDeviceFormS
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function ReadonlyDeviceField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-outline-variant/15 bg-surface-container-low px-4 py-3">
+      <p className="text-xs font-bold uppercase tracking-[0.08em] text-on-surface-variant">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-on-surface">{value}</p>
     </div>
   );
 }

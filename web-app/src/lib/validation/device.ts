@@ -68,29 +68,15 @@ export const createDeviceSchema = z.object({
 
 export const updateDeviceSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(2, "Device name must contain at least 2 characters.")
-      .max(120, "Device name must contain at most 120 characters.")
-      .optional(),
-    utilityType: z.enum(UTILITY_TYPES).optional(),
     tariffPerUnit: z
       .coerce
       .number()
       .finite("Tariff per unit must be a valid number.")
       .min(0, "Tariff per unit must be zero or a positive value.")
       .optional(),
-    unitLabel: z
-      .string()
-      .trim()
-      .min(1, "Unit label is required.")
-      .max(16, "Unit label must contain at most 16 characters.")
-      .optional(),
     isActive: z.boolean().optional(),
-    latitude: latitudeSchema,
-    longitude: longitudeSchema,
   })
+  .strict()
   .refine((value) => Object.values(value).some((field) => field !== undefined), {
     message: "At least one field must be provided for update.",
   });
